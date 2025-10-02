@@ -1,7 +1,6 @@
 "use client";
 
-import { Image as ImageIcon, Upload, Sparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Image as ImageIcon } from "lucide-react";
 
 interface EditableImageProps {
   src?: string;
@@ -25,38 +24,12 @@ export function EditableImage({
   if (!src) {
     return (
       <div
-        className={`relative bg-muted/30 border-2 border-dashed border-muted-foreground/30 ${bleed ? '' : 'rounded-lg'} flex flex-col items-center justify-center hover:border-blue-400 hover:bg-blue-50/50 transition-all cursor-pointer group ${className}`}
+        className={`relative bg-muted/30 border-2 border-dashed border-muted-foreground/30 ${bleed ? '' : 'rounded-lg'} flex flex-col items-center justify-center hover:border-primary hover:bg-muted/50 transition-all cursor-pointer group ${className}`}
         style={{ ...style, aspectRatio: bleed ? undefined : aspectRatio }}
         onClick={onReplace}
       >
-        <ImageIcon className="h-12 w-12 text-muted-foreground/40 group-hover:text-blue-500 transition-colors mb-3" />
-        <p className="text-sm text-muted-foreground mb-4">Click to add image</p>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-2"
-            onClick={(e) => {
-              e.stopPropagation();
-              onReplace();
-            }}
-          >
-            <Upload className="h-3 w-3" />
-            Upload
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-2"
-            onClick={(e) => {
-              e.stopPropagation();
-              onReplace();
-            }}
-          >
-            <Sparkles className="h-3 w-3" />
-            AI Generate
-          </Button>
-        </div>
+        <ImageIcon className="h-12 w-12 text-muted-foreground/40 group-hover:text-primary transition-colors mb-3" />
+        <p className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">Click to add image</p>
       </div>
     );
   }
@@ -68,32 +41,10 @@ export function EditableImage({
       onClick={onReplace}
     >
       <img src={src} alt={alt} className={`w-full h-full ${bleed ? 'object-cover' : 'object-cover'}`} />
-      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
-        <div className="flex gap-2">
-          <Button
-            variant="secondary"
-            size="sm"
-            className="gap-2"
-            onClick={(e) => {
-              e.stopPropagation();
-              onReplace();
-            }}
-          >
-            <Upload className="h-3 w-3" />
-            Replace
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            className="gap-2"
-            onClick={(e) => {
-              e.stopPropagation();
-              onReplace();
-            }}
-          >
-            <Sparkles className="h-3 w-3" />
-            AI Generate
-          </Button>
+      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
+        <div className="text-center">
+          <ImageIcon className="h-8 w-8 text-white mx-auto mb-2" />
+          <p className="text-white text-sm font-medium">Click to change image</p>
         </div>
       </div>
     </div>

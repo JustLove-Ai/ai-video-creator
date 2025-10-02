@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { X, Upload, Sparkles, Link as LinkIcon } from "lucide-react";
+import { X, Upload, Sparkles, Image as ImageIcon, Trash2, Edit2 } from "lucide-react";
+import { getImageLibrary, addImageToLibrary, deleteImageFromLibrary, ImageMetadata } from "@/lib/imageLibrary";
 
 interface ImageUploadPanelProps {
   onClose: () => void;
@@ -15,11 +15,16 @@ interface ImageUploadPanelProps {
 }
 
 export function ImageUploadPanel({ onClose, onImageSelect }: ImageUploadPanelProps) {
-  const [activeTab, setActiveTab] = useState<"upload" | "ai" | "url">("upload");
+  const [activeTab, setActiveTab] = useState<"upload" | "ai" | "library">("library");
   const [aiPrompt, setAiPrompt] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [imageLibrary, setImageLibrary] = useState<ImageMetadata[]>([]);
+  const [libraryFilter, setLibraryFilter] = useState<"all" | "upload" | "ai-generated">("all");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setImageLibrary(getImageLibrary());
+  }, []);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -27,6 +32,15 @@ export function ImageUploadPanel({ onClose, onImageSelect }: ImageUploadPanelPro
       const reader = new FileReader();
       reader.onload = (event) => {
         const url = event.target?.result as string;
+
+        // Add to library
+        const metadata = addImageToLibrary({
+          url,
+          type: "upload",
+          name: file.name,
+        });
+
+        setImageLibrary(getImageLibrary());
         onImageSelect(url);
         onClose();
       };
@@ -42,18 +56,41 @@ export function ImageUploadPanel({ onClose, onImageSelect }: ImageUploadPanelPro
     setTimeout(() => {
       // TODO: Integrate with actual AI image generation API
       const placeholderUrl = `https://placehold.co/1920x1080/3b82f6/ffffff?text=${encodeURIComponent(aiPrompt.slice(0, 30))}`;
+
+      // Add to library with prompt
+      const metadata = addImageToLibrary({
+        url: placeholderUrl,
+        type: "ai-generated",
+        name: `AI: ${aiPrompt.slice(0, 50)}`,
+        prompt: aiPrompt,
+      });
+
+      setImageLibrary(getImageLibrary());
       onImageSelect(placeholderUrl);
       setIsGenerating(false);
       onClose();
     }, 2000);
   };
 
-  const handleUrlSubmit = () => {
-    if (imageUrl.trim()) {
-      onImageSelect(imageUrl);
-      onClose();
-    }
+  const handleLibraryImageSelect = (image: ImageMetadata) => {
+    onImageSelect(image.url);
+    onClose();
   };
+
+  const handleDeleteImage = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    deleteImageFromLibrary(id);
+    setImageLibrary(getImageLibrary());
+  };
+
+  const handleReusePrompt = (prompt: string) => {
+    setAiPrompt(prompt);
+    setActiveTab("ai");
+  };
+
+  const filteredLibrary = libraryFilter === "all"
+    ? imageLibrary
+    : imageLibrary.filter(img => img.type === libraryFilter);
 
   return (
     <motion.div
@@ -73,6 +110,17 @@ export function ImageUploadPanel({ onClose, onImageSelect }: ImageUploadPanelPro
 
       {/* Tabs */}
       <div className="flex border-b border-border">
+        <button
+          onClick={() => setActiveTab("library")}
+          className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+            activeTab === "library"
+              ? "text-foreground border-b-2 border-primary bg-muted/50"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
+          }`}
+        >
+          <ImageIcon className="h-4 w-4 inline mr-2" />
+          Library
+        </button>
         <button
           onClick={() => setActiveTab("upload")}
           className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
@@ -95,22 +143,110 @@ export function ImageUploadPanel({ onClose, onImageSelect }: ImageUploadPanelPro
           <Sparkles className="h-4 w-4 inline mr-2" />
           AI Generate
         </button>
-        <button
-          onClick={() => setActiveTab("url")}
-          className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
-            activeTab === "url"
-              ? "text-foreground border-b-2 border-primary bg-muted/50"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
-          }`}
-        >
-          <LinkIcon className="h-4 w-4 inline mr-2" />
-          URL
-        </button>
       </div>
 
       {/* Content */}
       <ScrollArea className="flex-1">
         <div className="p-4">
+          {activeTab === "library" && (
+            <div className="space-y-4">
+              {/* Filter buttons */}
+              <div className="flex gap-2">
+                <Button
+                  variant={libraryFilter === "all" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setLibraryFilter("all")}
+                  className="flex-1"
+                >
+                  All ({imageLibrary.length})
+                </Button>
+                <Button
+                  variant={libraryFilter === "upload" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setLibraryFilter("upload")}
+                  className="flex-1"
+                >
+                  <Upload className="h-3 w-3 mr-1" />
+                  Uploads ({imageLibrary.filter(img => img.type === "upload").length})
+                </Button>
+                <Button
+                  variant={libraryFilter === "ai-generated" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setLibraryFilter("ai-generated")}
+                  className="flex-1"
+                >
+                  <Sparkles className="h-3 w-3 mr-1" />
+                  AI ({imageLibrary.filter(img => img.type === "ai-generated").length})
+                </Button>
+              </div>
+
+              {/* Image Grid */}
+              {filteredLibrary.length === 0 ? (
+                <div className="text-center py-12">
+                  <ImageIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-sm text-muted-foreground mb-2">No images yet</p>
+                  <p className="text-xs text-muted-foreground">Upload or generate images to build your library</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  {filteredLibrary.map((image) => (
+                    <div
+                      key={image.id}
+                      className="group relative aspect-video bg-muted rounded-lg border border-border overflow-hidden cursor-pointer hover:ring-2 hover:ring-primary transition-all"
+                      onClick={() => handleLibraryImageSelect(image)}
+                    >
+                      <img
+                        src={image.url}
+                        alt={image.name}
+                        className="w-full h-full object-cover"
+                      />
+                      {/* Overlay with actions */}
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 gap-2">
+                        {image.type === "ai-generated" && image.prompt && (
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            className="gap-1 text-xs"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleReusePrompt(image.prompt!);
+                            }}
+                          >
+                            <Edit2 className="h-3 w-3" />
+                            Edit Prompt
+                          </Button>
+                        )}
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          className="gap-1 text-xs"
+                          onClick={(e) => handleDeleteImage(image.id, e)}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                          Delete
+                        </Button>
+                      </div>
+                      {/* Type badge */}
+                      <div className="absolute top-1 left-1 bg-black/60 backdrop-blur-sm rounded px-1.5 py-0.5 text-xs text-white flex items-center gap-1">
+                        {image.type === "ai-generated" ? (
+                          <>
+                            <Sparkles className="h-2.5 w-2.5" />
+                            AI
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="h-2.5 w-2.5" />
+                            Upload
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {activeTab === "upload" && (
             <div className="space-y-4">
               <input
@@ -127,16 +263,6 @@ export function ImageUploadPanel({ onClose, onImageSelect }: ImageUploadPanelPro
                 <Upload className="h-12 w-12 text-muted-foreground mb-4" />
                 <p className="text-sm font-medium mb-1">Click to upload</p>
                 <p className="text-xs text-muted-foreground">PNG, JPG up to 10MB</p>
-              </div>
-              <Separator />
-              <div className="space-y-2">
-                <p className="text-xs text-muted-foreground">Recent uploads</p>
-                <div className="grid grid-cols-3 gap-2">
-                  {/* Placeholder for recent uploads */}
-                  <div className="aspect-square bg-muted rounded border border-border"></div>
-                  <div className="aspect-square bg-muted rounded border border-border"></div>
-                  <div className="aspect-square bg-muted rounded border border-border"></div>
-                </div>
               </div>
             </div>
           )}
@@ -181,40 +307,6 @@ export function ImageUploadPanel({ onClose, onImageSelect }: ImageUploadPanelPro
             </div>
           )}
 
-          {activeTab === "url" && (
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium mb-2 block">Image URL</label>
-                <Input
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  placeholder="https://example.com/image.jpg"
-                  type="url"
-                />
-              </div>
-              <Button onClick={handleUrlSubmit} disabled={!imageUrl.trim()} className="w-full">
-                Add Image
-              </Button>
-              {imageUrl && (
-                <>
-                  <Separator />
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-2">Preview</p>
-                    <div className="border border-border rounded overflow-hidden">
-                      <img
-                        src={imageUrl}
-                        alt="Preview"
-                        className="w-full h-auto"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = "none";
-                        }}
-                      />
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
         </div>
       </ScrollArea>
     </motion.div>

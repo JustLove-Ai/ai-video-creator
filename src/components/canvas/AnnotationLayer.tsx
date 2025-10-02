@@ -229,7 +229,7 @@ export function AnnotationLayer({
     <div className="absolute inset-0 pointer-events-none">
       <svg
         ref={svgRef}
-        className="w-full h-full pointer-events-auto"
+        className={`w-full h-full ${activeTool ? "pointer-events-auto" : "pointer-events-none"}`}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
