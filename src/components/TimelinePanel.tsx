@@ -15,26 +15,7 @@ import {
   ChevronDown,
   AlertTriangle
 } from "lucide-react";
-
-interface CanvasElement {
-  id: string;
-  type: "text" | "image" | "shape";
-  content: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  rotation: number;
-  style: Record<string, unknown>;
-  animation: Record<string, unknown>;
-}
-
-interface Scene {
-  id: string;
-  content: string;
-  duration: number;
-  elements: CanvasElement[];
-}
+import { Scene } from "@/types";
 
 interface TimelinePanelProps {
   scenes: Scene[];

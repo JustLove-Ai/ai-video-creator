@@ -16,25 +16,59 @@ import {
   Bot,
   Layers,
   Eye,
-  Sparkles
+  Sparkles,
+  LayoutGrid,
+  Palette,
+  Pencil
 } from "lucide-react";
+import { RightPanelType } from "@/types";
 
 interface TopToolbarProps {
   selectedTool: string | null;
   onToolSelect: (tool: string | null) => void;
+  rightPanel: RightPanelType;
+  onRightPanelChange: (panel: RightPanelType) => void;
+  annotationMode: boolean;
+  onAnnotationModeToggle: () => void;
 }
 
 const tools = [
+  { id: "layout", label: "Layout", icon: LayoutGrid },
+  { id: "theme", label: "Theme", icon: Palette },
+  { id: "annotations", label: "Annotate", icon: Pencil },
   { id: "avatars", label: "Avatars", icon: User },
   { id: "text", label: "Text", icon: Type },
   { id: "media", label: "Media", icon: ImageIcon },
   { id: "elements", label: "Elements", icon: Shapes },
-  { id: "captions", label: "Captions", icon: MessageSquare },
-  { id: "ai", label: "AI", icon: Bot },
-  { id: "background", label: "Background", icon: Layers },
 ];
 
-export function TopToolbar({ selectedTool, onToolSelect }: TopToolbarProps) {
+export function TopToolbar({
+  selectedTool,
+  onToolSelect,
+  rightPanel,
+  onRightPanelChange,
+  annotationMode,
+  onAnnotationModeToggle,
+}: TopToolbarProps) {
+  const handleToolClick = (toolId: string) => {
+    if (toolId === "layout") {
+      onRightPanelChange(rightPanel === "layout" ? null : "layout");
+    } else if (toolId === "theme") {
+      onRightPanelChange(rightPanel === "theme" ? null : "theme");
+    } else if (toolId === "annotations") {
+      onAnnotationModeToggle();
+    } else {
+      onToolSelect(selectedTool === toolId ? null : toolId);
+    }
+  };
+
+  const isToolActive = (toolId: string) => {
+    if (toolId === "layout") return rightPanel === "layout";
+    if (toolId === "theme") return rightPanel === "theme";
+    if (toolId === "annotations") return annotationMode;
+    return selectedTool === toolId;
+  };
+
   return (
     <motion.div
       initial={{ y: -60, opacity: 0 }}
@@ -72,7 +106,7 @@ export function TopToolbar({ selectedTool, onToolSelect }: TopToolbarProps) {
         <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-1">
           {tools.map((tool) => {
             const Icon = tool.icon;
-            const isSelected = selectedTool === tool.id;
+            const isSelected = isToolActive(tool.id);
 
             return (
               <Tooltip key={tool.id}>
@@ -80,7 +114,7 @@ export function TopToolbar({ selectedTool, onToolSelect }: TopToolbarProps) {
                   <Button
                     variant={isSelected ? "secondary" : "ghost"}
                     size="sm"
-                    onClick={() => onToolSelect(isSelected ? null : tool.id)}
+                    onClick={() => handleToolClick(tool.id)}
                     className={`flex flex-col items-center gap-1 h-12 min-w-16 text-xs ${
                       isSelected
                         ? "bg-background text-foreground shadow-sm"
@@ -103,7 +137,6 @@ export function TopToolbar({ selectedTool, onToolSelect }: TopToolbarProps) {
       {/* Right Section */}
       <div className="flex items-center gap-3">
         <Separator orientation="vertical" className="h-6" />
-        <div className="text-sm text-muted-foreground">Layers</div>
         <Button variant="outline" size="sm" className="gap-2">
           <Eye className="h-4 w-4" />
           Preview

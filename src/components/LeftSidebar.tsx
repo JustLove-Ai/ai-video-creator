@@ -19,47 +19,35 @@ import {
   GripVertical
 } from "lucide-react";
 
-interface CanvasElement {
-  id: string;
-  type: "text" | "image" | "shape";
-  content: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  rotation: number;
-  style: Record<string, unknown>;
-  animation: Record<string, unknown>;
-}
-
-interface Scene {
-  id: string;
-  content: string;
-  duration: number;
-  elements: CanvasElement[];
-}
+import { Scene, Theme } from "@/types";
+import { parseScriptToLayout } from "@/lib/layouts";
 
 interface LeftSidebarProps {
   scenes: Scene[];
-  setScenes: (scenes: Scene[]) => void;
+  setScenes: React.Dispatch<React.SetStateAction<Scene[]>>;
   activeSceneId: string;
   setActiveSceneId: (id: string) => void;
+  currentTheme: Theme;
 }
 
 export function LeftSidebar({
   scenes,
   setScenes,
   activeSceneId,
-  setActiveSceneId
+  setActiveSceneId,
+  currentTheme,
 }: LeftSidebarProps) {
   const [editingSceneId, setEditingSceneId] = useState<string | null>(null);
 
   const addScene = () => {
+    const content = "Type your script or use '/' for commands";
     const newScene: Scene = {
       id: Date.now().toString(),
-      content: "Type your script or use '/' for commands",
+      content,
       duration: 5,
-      elements: []
+      layout: "titleBody",
+      layoutContent: parseScriptToLayout(content, "titleBody"),
+      annotations: [],
     };
     setScenes([...scenes, newScene]);
     setActiveSceneId(newScene.id);
@@ -67,11 +55,14 @@ export function LeftSidebar({
   };
 
   const generateSceneWithAI = async () => {
+    const content = "AI is generating your scene content...";
     const newScene: Scene = {
       id: Date.now().toString(),
-      content: "AI is generating your scene content...",
+      content,
       duration: 5,
-      elements: []
+      layout: "titleBody",
+      layoutContent: parseScriptToLayout(content, "titleBody"),
+      annotations: [],
     };
     setScenes([...scenes, newScene]);
     setActiveSceneId(newScene.id);
@@ -79,12 +70,32 @@ export function LeftSidebar({
     // Simulate AI generation
     setTimeout(() => {
       const aiGeneratedContent = "Welcome to our innovative platform! We're excited to showcase how AI can transform your creative workflow and help you produce stunning content in minutes.";
-      setScenes(prev => prev.map(s => s.id === newScene.id ? { ...s, content: aiGeneratedContent } : s));
+      setScenes((prev: Scene[]) =>
+        prev.map(s =>
+          s.id === newScene.id
+            ? {
+                ...s,
+                content: aiGeneratedContent,
+                layoutContent: parseScriptToLayout(aiGeneratedContent, s.layout),
+              }
+            : s
+        )
+      );
     }, 2000);
   };
 
   const updateSceneContent = (sceneId: string, content: string) => {
-    setScenes(scenes.map(s => s.id === sceneId ? { ...s, content } : s));
+    setScenes(
+      scenes.map(s =>
+        s.id === sceneId
+          ? {
+              ...s,
+              content,
+              layoutContent: parseScriptToLayout(content, s.layout, s.layoutContent),
+            }
+          : s
+      )
+    );
   };
 
   const deleteScene = (sceneId: string) => {
