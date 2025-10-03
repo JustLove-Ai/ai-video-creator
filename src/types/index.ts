@@ -7,7 +7,23 @@ export type LayoutType =
   | "fullImage"
   | "twoColumn"
   | "titleBody"
-  | "blank";
+  | "blank"
+  | "centeredChart"
+  | "comparison";
+
+// Chart Data
+export interface ChartData {
+  type: "bar" | "pie" | "line" | "funnel";
+  title: string;
+  labels: string[];
+  datasets: {
+    label: string;
+    data: number[];
+    color: string;
+  }[];
+  showLegend?: boolean;
+  legendPosition?: "top" | "bottom" | "left" | "right";
+}
 
 // Layout Content - different layouts use different fields
 export interface LayoutContent {
@@ -16,9 +32,12 @@ export interface LayoutContent {
   body?: string;
   bulletPoints?: string[];
   imageUrl?: string;
+  imageUrl2?: string; // For comparison layout
   leftColumn?: string;
   rightColumn?: string;
   imageBleed?: boolean; // When true, image stretches to edges
+  chartData?: ChartData; // Chart data for chart layouts
+  chartData2?: ChartData; // For comparison layout
 }
 
 // Theme System
@@ -81,7 +100,7 @@ export interface Scene {
 }
 
 // Panel Types
-export type RightPanelType = "layout" | "theme" | "imageUpload" | null;
+export type RightPanelType = "layout" | "theme" | "imageUpload" | "charts" | null;
 
 // Tool Types (extended)
 export type ToolType =

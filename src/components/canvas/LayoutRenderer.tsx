@@ -9,6 +9,8 @@ import { FullImageLayout } from "@/components/layouts/FullImageLayout";
 import { TwoColumnLayout } from "@/components/layouts/TwoColumnLayout";
 import { TitleBodyLayout } from "@/components/layouts/TitleBodyLayout";
 import { BlankLayout } from "@/components/layouts/BlankLayout";
+import { CenteredChartLayout } from "@/components/layouts/CenteredChartLayout";
+import { ComparisonLayout } from "@/components/layouts/ComparisonLayout";
 
 interface LayoutRendererProps {
   layoutType: LayoutType;
@@ -16,6 +18,7 @@ interface LayoutRendererProps {
   theme: Theme;
   onContentChange: (content: LayoutContent) => void;
   onImageReplace: () => void;
+  onChartAdd: () => void;
 }
 
 export function LayoutRenderer({
@@ -24,6 +27,7 @@ export function LayoutRenderer({
   theme,
   onContentChange,
   onImageReplace,
+  onChartAdd,
 }: LayoutRendererProps) {
   switch (layoutType) {
     case "cover":
@@ -36,6 +40,7 @@ export function LayoutRenderer({
           theme={theme}
           onContentChange={onContentChange}
           onImageReplace={onImageReplace}
+          onChartAdd={onChartAdd}
         />
       );
 
@@ -46,6 +51,7 @@ export function LayoutRenderer({
           theme={theme}
           onContentChange={onContentChange}
           onImageReplace={onImageReplace}
+          onChartAdd={onChartAdd}
         />
       );
 
@@ -56,6 +62,7 @@ export function LayoutRenderer({
           theme={theme}
           onContentChange={onContentChange}
           onImageReplace={onImageReplace}
+          onChartAdd={onChartAdd}
         />
       );
 
@@ -66,6 +73,7 @@ export function LayoutRenderer({
           theme={theme}
           onContentChange={onContentChange}
           onImageReplace={onImageReplace}
+          onChartAdd={onChartAdd}
         />
       );
 
@@ -77,6 +85,28 @@ export function LayoutRenderer({
 
     case "blank":
       return <BlankLayout theme={theme} />;
+
+    case "centeredChart":
+      return (
+        <CenteredChartLayout
+          content={content}
+          theme={theme}
+          onContentChange={onContentChange}
+          onImageReplace={onImageReplace}
+          onChartAdd={onChartAdd}
+        />
+      );
+
+    case "comparison":
+      return (
+        <ComparisonLayout
+          content={content}
+          theme={theme}
+          onContentChange={onContentChange}
+          onImageReplace={onImageReplace}
+          onChartAdd={onChartAdd}
+        />
+      );
 
     default:
       return <TitleBodyLayout content={content} theme={theme} onContentChange={onContentChange} />;

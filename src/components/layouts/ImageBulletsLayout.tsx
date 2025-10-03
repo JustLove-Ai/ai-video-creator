@@ -2,7 +2,7 @@
 
 import { Theme, LayoutContent } from "@/types";
 import { EditableText } from "@/components/canvas/EditableText";
-import { EditableImage } from "@/components/canvas/EditableImage";
+import { EditableMediaSlot } from "@/components/canvas/EditableMediaSlot";
 import { getBackgroundStyle } from "@/lib/themes";
 import { Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ interface ImageBulletsLayoutProps {
   theme: Theme;
   onContentChange: (content: LayoutContent) => void;
   onImageReplace: () => void;
+  onChartAdd: () => void;
 }
 
 export function ImageBulletsLayout({
@@ -19,6 +20,7 @@ export function ImageBulletsLayout({
   theme,
   onContentChange,
   onImageReplace,
+  onChartAdd,
 }: ImageBulletsLayoutProps) {
   const bulletPoints = content.bulletPoints || ["Point 1", "Point 2", "Point 3"];
   const hasBleed = content.imageBleed;
@@ -65,11 +67,13 @@ export function ImageBulletsLayout({
 
       {/* Image and Bullets in two columns */}
       <div className="flex-1 flex items-start" style={{ gap: hasBleed ? '0' : `${theme.spacing.gap * 2}px`, padding: hasBleed ? `${theme.spacing.gap}px 0 0 0` : '0' }}>
-        {/* Left: Image */}
+        {/* Left: Image/Chart */}
         <div className={hasBleed ? 'w-[45%] h-full' : 'w-[45%]'}>
-          <EditableImage
-            src={content.imageUrl}
-            onReplace={onImageReplace}
+          <EditableMediaSlot
+            imageUrl={content.imageUrl}
+            chartData={content.chartData}
+            onImageReplace={onImageReplace}
+            onChartAdd={onChartAdd}
             className={hasBleed ? 'w-full h-full' : 'w-full'}
             aspectRatio={hasBleed ? undefined : "16/9"}
             bleed={hasBleed}

@@ -2,7 +2,7 @@
 
 import { Theme, LayoutContent } from "@/types";
 import { EditableText } from "@/components/canvas/EditableText";
-import { EditableImage } from "@/components/canvas/EditableImage";
+import { EditableMediaSlot } from "@/components/canvas/EditableMediaSlot";
 import { getBackgroundStyle } from "@/lib/themes";
 
 interface ImageRightLayoutProps {
@@ -10,6 +10,7 @@ interface ImageRightLayoutProps {
   theme: Theme;
   onContentChange: (content: LayoutContent) => void;
   onImageReplace: () => void;
+  onChartAdd: () => void;
 }
 
 export function ImageRightLayout({
@@ -17,6 +18,7 @@ export function ImageRightLayout({
   theme,
   onContentChange,
   onImageReplace,
+  onChartAdd,
 }: ImageRightLayoutProps) {
   const hasBleed = content.imageBleed;
 
@@ -58,11 +60,13 @@ export function ImageRightLayout({
         />
       </div>
 
-      {/* Right: Image (40%) */}
+      {/* Right: Image/Chart (40%) */}
       <div className="w-[40%] h-full flex items-center">
-        <EditableImage
-          src={content.imageUrl}
-          onReplace={onImageReplace}
+        <EditableMediaSlot
+          imageUrl={content.imageUrl}
+          chartData={content.chartData}
+          onImageReplace={onImageReplace}
+          onChartAdd={onChartAdd}
           className="w-full h-full"
           aspectRatio={hasBleed ? undefined : "4/3"}
           bleed={hasBleed}

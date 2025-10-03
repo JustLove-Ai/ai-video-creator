@@ -9,17 +9,14 @@ import {
   Menu,
   ChevronDown,
   User,
-  Type,
   Image as ImageIcon,
   Shapes,
-  MessageSquare,
-  Bot,
-  Layers,
   Eye,
   Sparkles,
   LayoutGrid,
   Palette,
-  Pencil
+  Pencil,
+  BarChart3
 } from "lucide-react";
 import { RightPanelType } from "@/types";
 
@@ -37,7 +34,7 @@ const tools = [
   { id: "theme", label: "Theme", icon: Palette },
   { id: "annotations", label: "Annotate", icon: Pencil },
   { id: "avatars", label: "Avatars", icon: User },
-  { id: "text", label: "Text", icon: Type },
+  { id: "charts", label: "Charts", icon: BarChart3 },
   { id: "media", label: "Media", icon: ImageIcon },
   { id: "elements", label: "Elements", icon: Shapes },
 ];
@@ -55,6 +52,10 @@ export function TopToolbar({
       onRightPanelChange(rightPanel === "layout" ? null : "layout");
     } else if (toolId === "theme") {
       onRightPanelChange(rightPanel === "theme" ? null : "theme");
+    } else if (toolId === "charts") {
+      onRightPanelChange(rightPanel === "charts" ? null : "charts");
+    } else if (toolId === "media") {
+      onRightPanelChange(rightPanel === "imageUpload" ? null : "imageUpload");
     } else if (toolId === "annotations") {
       onAnnotationModeToggle();
     } else {
@@ -65,6 +66,8 @@ export function TopToolbar({
   const isToolActive = (toolId: string) => {
     if (toolId === "layout") return rightPanel === "layout";
     if (toolId === "theme") return rightPanel === "theme";
+    if (toolId === "charts") return rightPanel === "charts";
+    if (toolId === "media") return rightPanel === "imageUpload";
     if (toolId === "annotations") return annotationMode;
     return selectedTool === toolId;
   };

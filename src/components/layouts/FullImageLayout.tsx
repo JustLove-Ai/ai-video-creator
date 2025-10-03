@@ -2,13 +2,14 @@
 
 import { Theme, LayoutContent } from "@/types";
 import { EditableText } from "@/components/canvas/EditableText";
-import { EditableImage } from "@/components/canvas/EditableImage";
+import { EditableMediaSlot } from "@/components/canvas/EditableMediaSlot";
 
 interface FullImageLayoutProps {
   content: LayoutContent;
   theme: Theme;
   onContentChange: (content: LayoutContent) => void;
   onImageReplace: () => void;
+  onChartAdd: () => void;
 }
 
 export function FullImageLayout({
@@ -16,13 +17,16 @@ export function FullImageLayout({
   theme,
   onContentChange,
   onImageReplace,
+  onChartAdd,
 }: FullImageLayoutProps) {
   return (
     <div className="w-full h-full relative">
-      {/* Full Background Image */}
-      <EditableImage
-        src={content.imageUrl}
-        onReplace={onImageReplace}
+      {/* Full Background Image/Chart */}
+      <EditableMediaSlot
+        imageUrl={content.imageUrl}
+        chartData={content.chartData}
+        onImageReplace={onImageReplace}
+        onChartAdd={onChartAdd}
         className="absolute inset-0 w-full h-full"
         bleed={true}
       />

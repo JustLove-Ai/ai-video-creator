@@ -23,8 +23,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import { Scene, Theme } from "@/types";
+import { Scene, Theme, LayoutType } from "@/types";
 import { parseScriptToLayout } from "@/lib/layouts";
+import { YOUTUBE_SCRIPT_PROMPT, AI_GENERATION_SYSTEM_PROMPT } from "@/lib/constants";
 
 interface LeftSidebarProps {
   scenes: Scene[];
@@ -56,6 +57,9 @@ export function LeftSidebar({
   const [aiPromptSceneId, setAiPromptSceneId] = useState<string | null>(null);
   const [aiPrompt, setAiPrompt] = useState<string>("");
   const [isGeneratingAI, setIsGeneratingAI] = useState<string | null>(null);
+  const [showTopicInput, setShowTopicInput] = useState(false);
+  const [scriptTopic, setScriptTopic] = useState<string>("");
+  const [isGeneratingScript, setIsGeneratingScript] = useState(false);
 
   const addScene = () => {
     const content = "Type your script or use '/' for commands";
@@ -72,34 +76,126 @@ export function LeftSidebar({
     setEditingSceneId(newScene.id);
   };
 
-  const generateSceneWithAI = async () => {
-    const content = "AI is generating your scene content...";
-    const newScene: Scene = {
-      id: Date.now().toString(),
-      content,
-      duration: 5,
-      layout: "titleBody",
-      layoutContent: parseScriptToLayout(content, "titleBody"),
-      annotations: [],
-    };
-    setScenes([...scenes, newScene]);
-    setActiveSceneId(newScene.id);
+  const generateScriptWithAI = async () => {
+    if (!scriptTopic.trim()) return;
 
-    // Simulate AI generation
-    setTimeout(() => {
-      const aiGeneratedContent = "Welcome to our innovative platform! We're excited to showcase how AI can transform your creative workflow and help you produce stunning content in minutes.";
-      setScenes((prev: Scene[]) =>
-        prev.map(s =>
-          s.id === newScene.id
-            ? {
-                ...s,
-                content: aiGeneratedContent,
-                layoutContent: parseScriptToLayout(aiGeneratedContent, s.layout),
-              }
-            : s
-        )
-      );
-    }, 2000);
+    setIsGeneratingScript(true);
+
+    try {
+      // TODO: Replace with actual API call to OpenAI or Claude
+      // For now, simulating with mock data
+      await new Promise(resolve => setTimeout(resolve, 3000));
+
+      // Mock AI response - this would come from the API
+      const mockScriptSlides = [
+        {
+          section: "HOOK",
+          layout: "cover" as LayoutType,
+          narration: `You know that feeling when ${scriptTopic} seems impossible? What if I told you there's a better way?`,
+          title: `The ${scriptTopic} Revolution`,
+          subtitle: "Everything is about to change",
+        },
+        {
+          section: "TRANSITION",
+          layout: "titleBody" as LayoutType,
+          narration: "So what does this actually mean for you? Let me break it down.",
+          title: "Here's Why This Matters",
+          body: "This isn't just theory - it's a proven approach that works.",
+        },
+        {
+          section: "SETUP",
+          layout: "titleBody" as LayoutType,
+          narration: `By the end of this, you'll understand exactly how to master ${scriptTopic}. Whether you're a beginner or experienced, this approach will transform your results.`,
+          title: "What You'll Learn Today",
+          body: `A complete system for ${scriptTopic} that delivers real results.`,
+        },
+        {
+          section: "PROBLEM",
+          layout: "imageBullets" as LayoutType,
+          narration: `Most people struggle with ${scriptTopic} because they're using outdated methods. That stops today.`,
+          title: "The Problem Most People Face",
+          bulletPoints: [
+            "Overwhelming complexity",
+            "Too many conflicting approaches",
+            "No clear path to success"
+          ],
+        },
+        {
+          section: "TRANSITION",
+          layout: "titleBody" as LayoutType,
+          narration: "But here's the catch - you need the right framework.",
+          title: "The Missing Piece",
+          body: "Let's fix that right now.",
+        },
+        {
+          section: "SOLUTION",
+          layout: "imageBullets" as LayoutType,
+          narration: `Here's your step-by-step system for ${scriptTopic}. Follow these steps and watch what happens.`,
+          title: "Your Action Plan",
+          bulletPoints: [
+            "Start with the fundamentals",
+            "Build momentum systematically",
+            "Scale with confidence"
+          ],
+        },
+        {
+          section: "RESULT",
+          layout: "titleBody" as LayoutType,
+          narration: `Once you implement this, ${scriptTopic} becomes effortless. You'll wonder why you struggled before.`,
+          title: "The Transformation",
+          body: "From overwhelmed to unstoppable - that's the difference this makes.",
+        },
+        {
+          section: "TRANSITION",
+          layout: "titleBody" as LayoutType,
+          narration: "Now that you've seen it, here's your next move.",
+          title: "Ready to Take Action?",
+          body: "Your journey starts now.",
+        },
+        {
+          section: "NEXT",
+          layout: "imageBullets" as LayoutType,
+          narration: `Try this today: Start with step one. Don't overthink it - just begin. Want help? I'll show you exactly how in the next video.`,
+          title: "What's Next",
+          bulletPoints: [
+            "Take action on step one today",
+            "Track your progress",
+            "Watch the next video for advanced strategies"
+          ],
+        },
+      ];
+
+      // Convert to Scene objects
+      const newScenes: Scene[] = mockScriptSlides.map((slide, index) => ({
+        id: `${Date.now()}-${index}`,
+        content: slide.narration,
+        duration: 5,
+        layout: slide.layout,
+        layoutContent: {
+          title: slide.title || slide.title,
+          subtitle: slide.subtitle,
+          body: slide.body,
+          bulletPoints: slide.bulletPoints,
+        },
+        annotations: [],
+      }));
+
+      setScenes(newScenes);
+      if (newScenes.length > 0) {
+        setActiveSceneId(newScenes[0].id);
+      }
+
+      setShowTopicInput(false);
+      setScriptTopic("");
+    } catch (error) {
+      console.error("Error generating script:", error);
+    } finally {
+      setIsGeneratingScript(false);
+    }
+  };
+
+  const generateSceneWithAI = () => {
+    setShowTopicInput(true);
   };
 
   const updateSceneContent = (sceneId: string, content: string) => {
@@ -211,30 +307,69 @@ export function LeftSidebar({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <div className="space-y-2">
-          <Button
-            onClick={addScene}
-            variant="ghost"
-            size="sm"
-            className="w-full justify-start text-muted-foreground hover:text-foreground gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            Scene
-          </Button>
-          <Button
-            onClick={generateSceneWithAI}
-            variant="ghost"
-            size="sm"
-            className="w-full justify-start text-muted-foreground hover:text-foreground gap-2"
-          >
-            <Bot className="h-4 w-4" />
-            AI Generate
-          </Button>
-        </div>
+        {showTopicInput ? (
+          <div className="space-y-2 mb-2">
+            <Textarea
+              value={scriptTopic}
+              onChange={(e) => setScriptTopic(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && e.ctrlKey) {
+                  generateScriptWithAI();
+                }
+              }}
+              placeholder="What's your video about? (e.g., 'How to start a business')"
+              className="min-h-[80px] text-sm resize-none"
+              autoFocus
+            />
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                onClick={generateScriptWithAI}
+                disabled={!scriptTopic.trim() || isGeneratingScript}
+                className="gap-2 flex-1"
+              >
+                <Sparkles className="h-3 w-3" />
+                {isGeneratingScript ? "Generating..." : "Generate Script"}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setShowTopicInput(false);
+                  setScriptTopic("");
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <Button
+              onClick={addScene}
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start text-muted-foreground hover:text-foreground gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Scene
+            </Button>
+            <Button
+              onClick={generateSceneWithAI}
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start text-muted-foreground hover:text-foreground gap-2"
+            >
+              <Bot className="h-4 w-4" />
+              AI Generate
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Scenes List */}
-      <ScrollArea className="flex-1 p-4">
+      <ScrollArea className="flex-1">
+        <div className="p-4">
         <div className="space-y-3">
           {scenes.map((scene, index) => (
             <motion.div
@@ -311,7 +446,7 @@ export function LeftSidebar({
                       />
                     ) : (
                       <div
-                        className="text-sm text-foreground leading-relaxed cursor-text"
+                        className="text-sm text-foreground leading-relaxed cursor-text line-clamp-2"
                         onClick={(e) => {
                           e.stopPropagation();
                           setEditingSceneId(scene.id);
@@ -367,6 +502,7 @@ export function LeftSidebar({
               </Card>
             </motion.div>
           ))}
+        </div>
         </div>
       </ScrollArea>
     </div>

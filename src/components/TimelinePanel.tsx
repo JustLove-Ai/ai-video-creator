@@ -21,12 +21,13 @@ interface TimelinePanelProps {
   scenes: Scene[];
   activeSceneId: string;
   setActiveSceneId: (id: string) => void;
+  isExpanded: boolean;
+  setIsExpanded: (expanded: boolean) => void;
 }
 
-export function TimelinePanel({ scenes, activeSceneId, setActiveSceneId }: TimelinePanelProps) {
+export function TimelinePanel({ scenes, activeSceneId, setActiveSceneId, isExpanded, setIsExpanded }: TimelinePanelProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime] = useState(0);
-  const [isExpanded, setIsExpanded] = useState(false);
 
   const totalDuration = scenes.reduce((acc, scene) => acc + scene.duration, 0);
 

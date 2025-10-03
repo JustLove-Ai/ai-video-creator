@@ -9,7 +9,8 @@ import { TimelinePanel } from "./TimelinePanel";
 import { LayoutPanel } from "./panels/LayoutPanel";
 import { ThemePanel } from "./panels/ThemePanel";
 import { ImageUploadPanel } from "./panels/ImageUploadPanel";
-import { Scene, RightPanelType, Theme, LayoutType } from "@/types";
+import { ChartsPanel } from "./panels/ChartsPanel";
+import { Scene, RightPanelType, Theme, LayoutType, ChartData } from "@/types";
 import { themePresets, mergeTheme } from "@/lib/themes";
 import { parseScriptToLayout, preserveContentOnLayoutChange } from "@/lib/layouts";
 
@@ -32,6 +33,7 @@ export function VideoEditor() {
     },
   ]);
   const [activeSceneId, setActiveSceneId] = useState("1");
+  const [isTimelineExpanded, setIsTimelineExpanded] = useState(false);
 
   const activeScene = scenes.find((s) => s.id === activeSceneId);
 
@@ -88,6 +90,32 @@ export function VideoEditor() {
     );
   };
 
+  // Handle chart insertion
+  const handleChartInsert = (chartData: ChartData) => {
+    if (!activeScene) return;
+
+    // Check if current layout supports images/charts
+    const imageLayouts: LayoutType[] = ["imageLeft", "imageRight", "imageBullets", "fullImage", "centeredChart", "comparison"];
+    const needsLayoutChange = !imageLayouts.includes(activeScene.layout);
+
+    setScenes((prev) =>
+      prev.map((s) =>
+        s.id === activeSceneId
+          ? {
+              ...s,
+              layout: needsLayoutChange ? "centeredChart" : s.layout,
+              layoutContent: {
+                ...s.layoutContent,
+                chartData,
+                // Remove imageUrl when adding chart
+                imageUrl: undefined,
+              },
+            }
+          : s
+      )
+    );
+  };
+
   return (
     <div className="h-screen bg-background text-foreground flex flex-col overflow-hidden">
       {/* Top Toolbar */}
@@ -107,7 +135,7 @@ export function VideoEditor() {
           initial={{ x: -300, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
-          className="w-80 bg-card border-r border-border flex flex-col"
+          className="w-80 bg-card border-r border-border flex flex-col overflow-hidden"
         >
           <LeftSidebar
             scenes={scenes}
@@ -120,7 +148,7 @@ export function VideoEditor() {
 
         {/* Main Canvas Area */}
         <motion.div
-          className="flex-1 flex flex-col bg-muted/20"
+          className="flex-1 flex flex-col bg-muted/20 overflow-hidden"
           animate={{
             marginRight: rightPanel ? 360 : 0,
           }}
@@ -139,6 +167,8 @@ export function VideoEditor() {
               annotationMode={annotationMode}
               onSceneUpdate={handleSceneUpdate}
               onImageReplace={() => setRightPanel("imageUpload")}
+              onChartAdd={() => setRightPanel("charts")}
+              isTimelineExpanded={isTimelineExpanded}
             />
           </motion.div>
 
@@ -147,12 +177,14 @@ export function VideoEditor() {
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.5, ease: "easeOut", delay: 0.4 }}
-            className="border-t border-border bg-card"
+            className="flex-shrink-0"
           >
             <TimelinePanel
               scenes={scenes}
               activeSceneId={activeSceneId}
               setActiveSceneId={setActiveSceneId}
+              isExpanded={isTimelineExpanded}
+              setIsExpanded={setIsTimelineExpanded}
             />
           </motion.div>
         </motion.div>
@@ -185,6 +217,13 @@ export function VideoEditor() {
             <ImageUploadPanel
               onClose={() => setRightPanel(null)}
               onImageSelect={handleImageSelect}
+            />
+          )}
+          {rightPanel === "charts" && (
+            <ChartsPanel
+              onClose={() => setRightPanel(null)}
+              onChartInsert={handleChartInsert}
+              currentTheme={activeScene?.themeOverride ? mergeTheme(activeTheme, activeScene.themeOverride) : activeTheme}
             />
           )}
         </AnimatePresence>

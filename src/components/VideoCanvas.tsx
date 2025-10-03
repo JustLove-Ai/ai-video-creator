@@ -17,6 +17,8 @@ interface VideoCanvasProps {
   annotationMode: boolean;
   onSceneUpdate: (scene: Scene) => void;
   onImageReplace: () => void;
+  onChartAdd: () => void;
+  isTimelineExpanded?: boolean;
 }
 
 export function VideoCanvas({
@@ -26,6 +28,8 @@ export function VideoCanvas({
   annotationMode,
   onSceneUpdate,
   onImageReplace,
+  onChartAdd,
+  isTimelineExpanded = false,
 }: VideoCanvasProps) {
   const [annotationTool, setAnnotationTool] = useState<AnnotationType | null>(null);
   const [annotationColor, setAnnotationColor] = useState("#000000");
@@ -65,6 +69,7 @@ export function VideoCanvas({
           theme={effectiveTheme}
           onContentChange={handleContentChange}
           onImageReplace={onImageReplace}
+          onChartAdd={onChartAdd}
         />
 
         {/* Annotation Layer (always visible if annotations exist, interactive only in annotation mode) */}
@@ -95,26 +100,29 @@ export function VideoCanvas({
       </motion.div>
 
       {/* Scene Content Display */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-        className="mt-6"
-      >
-        <Card className="p-4">
-          <div className="flex items-start gap-3">
-            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
-              <Type className="h-4 w-4" />
+      {!isTimelineExpanded && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          transition={{ delay: 0.3 }}
+          className="mt-6"
+        >
+          <Card className="p-4">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
+                <Type className="h-4 w-4" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-medium text-sm mb-2">Scene Script</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {activeScene.content}
+                </p>
+              </div>
             </div>
-            <div className="flex-1">
-              <h3 className="font-medium text-sm mb-2">Scene Script</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                {activeScene.content}
-              </p>
-            </div>
-          </div>
-        </Card>
-      </motion.div>
+          </Card>
+        </motion.div>
+      )}
     </div>
   );
 }

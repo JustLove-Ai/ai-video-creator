@@ -83,6 +83,8 @@ export function getLayoutName(layoutType: LayoutType): string {
     twoColumn: "Two Column",
     titleBody: "Title & Body",
     blank: "Blank",
+    centeredChart: "Centered Chart",
+    comparison: "Comparison",
   };
   return names[layoutType];
 }
@@ -98,6 +100,8 @@ export function getLayoutDescription(layoutType: LayoutType): string {
     twoColumn: "Two columns of text",
     titleBody: "Large title with body text",
     blank: "Start from scratch",
+    centeredChart: "Centered chart with title",
+    comparison: "Side-by-side comparison",
   };
   return descriptions[layoutType];
 }
