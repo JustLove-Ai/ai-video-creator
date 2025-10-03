@@ -8,7 +8,12 @@
       "Bash(git commit -m \"$(cat <<''EOF''\nAdd slide-based presentation system with layouts, themes, annotations, and image bleed feature\n\nImplemented comprehensive slide-based presentation system transforming the canvas from freeform to structured layouts:\n\n- Added 8 layout templates (cover, imageLeft, imageRight, imageBullets, fullImage, twoColumn, titleBody, blank)\n- Created global theme system with 6 presets and per-slide override capability\n- Implemented annotation system supporting freehand drawing and shapes (arrow, rectangle, circle, line, text)\n- Added right-side panels (Layout, Theme, ImageUpload) that slide in and shift canvas\n- Created inline click-to-edit functionality for text and images\n- Implemented image bleed toggle to stretch images to edges without padding/rounded corners\n- Auto-populates layout content from scene scripts with content preservation on layout switching\n- Added theme preview that applies immediately to current slide before global application\n\nNew components:\n- EditableText, EditableImage for inline editing\n- 8 layout components with responsive design\n- LayoutRenderer for routing to appropriate layouts\n- AnnotationLayer with SVG-based drawing system\n- AnnotationToolbar with color picker and stroke controls\n- LayoutPanel, ThemePanel, ImageUploadPanel for slide customization\n- Switch UI component using Radix UI\n\nNew utilities:\n- Theme system (src/lib/themes.ts) with presets and merging\n- Layout utilities (src/lib/layouts.ts) for parsing and content preservation\n- Centralized TypeScript types (src/types/index.ts)\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
       "Bash(git push:*)",
       "Read(//c/Users/spoil/Downloads/**)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "WebSearch",
+      "WebFetch(domain:platform.openai.com)",
+      "WebFetch(domain:www.remotion.dev)",
+      "Bash(npx prisma init:*)",
+      "Bash(npx prisma generate:*)"
     ],
     "deny": [],
     "ask": []

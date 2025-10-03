@@ -1,0 +1,82 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model VideoProject {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  aspectRatio String   @default("16:9")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  scenes      Scene[]
+  theme       Json? // Store theme configuration
+
+  @@map("video_projects")
+}
+
+model Scene {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  projectId       String   @db.ObjectId
+  project         VideoProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  // Scene order
+  order           Int
+
+  // Content
+  content         String   // Narration/script text
+  duration        Int      @default(5)
+
+  // Layout
+  layout          String   @default("titleBody")
+  layoutContent   Json     // Title, subtitle, body, bulletPoints, etc.
+
+  // Media
+  imageUrl        String?  // Generated or uploaded image URL
+  imagePrompt     String?  // Prompt used to generate image
+  audioUrl        String?  // Generated TTS audio URL
+  voiceId         String?  // OpenAI voice ID (alloy, echo, fable, onyx, nova, shimmer)
+
+  // Annotations
+  annotations     Json?    // Array of annotation elements
+
+  // Theme override
+  themeOverride   Json?    // Optional per-scene theme override
+
+  // Metadata
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("scenes")
+  @@index([projectId, order])
+}
+
+model GeneratedAsset {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  sceneId     String?  @db.ObjectId
+  projectId   String   @db.ObjectId
+
+  // Asset details
+  type        String   // "image" | "audio" | "video"
+  url         String   // URL to the asset (stored in cloud or local)
+  prompt      String?  // Prompt used for generation
+  model       String?  // Model used (gpt-image-1, tts-1, etc.)
+
+  // Metadata
+  fileSize    Int?
+  duration    Float?   // For audio/video
+  dimensions  Json?    // For images {width, height}
+
+  createdAt   DateTime @default(now())
+
+  @@map("generated_assets")
+  @@index([projectId])
+  @@index([sceneId])
+}
