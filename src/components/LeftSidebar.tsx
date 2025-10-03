@@ -381,7 +381,7 @@ export function LeftSidebar({
               <Card
                 className={`p-3 cursor-pointer transition-all duration-200 group ${
                   activeSceneId === scene.id
-                    ? "border-primary bg-primary/5"
+                    ? `border-primary bg-primary/5 ${editingSceneId !== scene.id && aiPromptSceneId !== scene.id ? 'shadow-[0_0_15px_rgba(255,121,0,0.3)]' : ''}`
                     : "border-border hover:border-muted-foreground/50"
                 }`}
                 onClick={() => setActiveSceneId(scene.id)}
@@ -406,7 +406,7 @@ export function LeftSidebar({
                             }
                           }}
                           placeholder="Describe what this slide should be about..."
-                          className="min-h-[60px] text-sm resize-none"
+                          className="min-h-[60px] text-sm resize-none focus-visible:border-border focus-visible:ring-muted"
                           autoFocus
                         />
                         <div className="flex gap-2">
@@ -441,7 +441,7 @@ export function LeftSidebar({
                             setEditingSceneId(null);
                           }
                         }}
-                        className="min-h-[60px] text-sm resize-none"
+                        className="min-h-[60px] text-sm resize-none focus-visible:border-border focus-visible:ring-muted"
                         autoFocus
                       />
                     ) : (

@@ -1,9 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Input } from "@/components/ui/input";
 import {
   ArrowLeft,
   Menu,
@@ -47,6 +49,9 @@ export function TopToolbar({
   annotationMode,
   onAnnotationModeToggle,
 }: TopToolbarProps) {
+  const [videoTitle, setVideoTitle] = useState("Untitled Video");
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+
   const handleToolClick = (toolId: string) => {
     if (toolId === "layout") {
       onRightPanelChange(rightPanel === "layout" ? null : "layout");
@@ -96,7 +101,27 @@ export function TopToolbar({
           <div className="w-6 h-6 bg-gradient-to-br from-orange-400 to-orange-600 rounded-sm flex items-center justify-center">
             <Sparkles className="h-3 w-3 text-white" />
           </div>
-          <span className="text-sm font-medium">Untitled Video</span>
+          {isEditingTitle ? (
+            <Input
+              value={videoTitle}
+              onChange={(e) => setVideoTitle(e.target.value)}
+              onBlur={() => setIsEditingTitle(false)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  setIsEditingTitle(false);
+                }
+              }}
+              className="h-7 w-40 text-sm font-medium focus-visible:border-border focus-visible:ring-muted"
+              autoFocus
+            />
+          ) : (
+            <span
+              className="text-sm font-medium cursor-pointer hover:text-muted-foreground transition-colors"
+              onClick={() => setIsEditingTitle(true)}
+            >
+              {videoTitle}
+            </span>
+          )}
         </div>
         <Separator orientation="vertical" className="h-6" />
         <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
