@@ -3,18 +3,20 @@ import { openai } from "@/lib/openai";
 
 export async function POST(request: NextRequest) {
   try {
-    const { text, voice } = await request.json();
+    const { text, voice, speed } = await request.json();
 
     if (!text) {
       return NextResponse.json({ error: "Text is required" }, { status: 400 });
     }
 
     const selectedVoice = voice || "alloy";
+    const selectedSpeed = speed || 1.0;
 
     const mp3 = await openai.audio.speech.create({
       model: "tts-1-hd",
       voice: selectedVoice,
       input: text,
+      speed: Math.max(0.25, Math.min(4.0, selectedSpeed)), // Clamp between 0.25 and 4.0
       response_format: "mp3",
     });
 

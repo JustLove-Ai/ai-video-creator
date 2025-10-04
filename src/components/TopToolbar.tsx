@@ -13,14 +13,15 @@ import {
   ChevronDown,
   User,
   Image as ImageIcon,
-  Shapes,
+  Video,
   Eye,
-  Sparkles,
+  Download,
   LayoutGrid,
   Palette,
   Pencil,
   BarChart3,
-  Save
+  Save,
+  Sparkles
 } from "lucide-react";
 import { RightPanelType } from "@/types";
 
@@ -34,6 +35,7 @@ interface TopToolbarProps {
   projectTitle: string;
   onTitleUpdate: (newTitle: string) => void;
   onPreview: () => void;
+  onExport: () => void;
 }
 
 const tools = [
@@ -43,7 +45,7 @@ const tools = [
   { id: "avatars", label: "Avatars", icon: User },
   { id: "charts", label: "Charts", icon: BarChart3 },
   { id: "media", label: "Media", icon: ImageIcon },
-  { id: "elements", label: "Elements", icon: Shapes },
+  { id: "video", label: "Video", icon: Video },
 ];
 
 export function TopToolbar({
@@ -56,6 +58,7 @@ export function TopToolbar({
   projectTitle,
   onTitleUpdate,
   onPreview,
+  onExport,
 }: TopToolbarProps) {
   const [videoTitle, setVideoTitle] = useState(projectTitle);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -74,6 +77,8 @@ export function TopToolbar({
       onRightPanelChange(rightPanel === "charts" ? null : "charts");
     } else if (toolId === "media") {
       onRightPanelChange(rightPanel === "imageUpload" ? null : "imageUpload");
+    } else if (toolId === "video") {
+      onRightPanelChange(rightPanel === "videoSettings" ? null : "videoSettings");
     } else if (toolId === "annotations") {
       onAnnotationModeToggle();
     } else {
@@ -86,6 +91,7 @@ export function TopToolbar({
     if (toolId === "theme") return rightPanel === "theme";
     if (toolId === "charts") return rightPanel === "charts";
     if (toolId === "media") return rightPanel === "imageUpload";
+    if (toolId === "video") return rightPanel === "videoSettings";
     if (toolId === "annotations") return annotationMode;
     return selectedTool === toolId;
   };
@@ -199,9 +205,13 @@ export function TopToolbar({
           <Eye className="h-4 w-4" />
           Preview
         </Button>
-        <Button className="gap-2 bg-foreground text-background hover:bg-foreground/90">
-          <Sparkles className="h-4 w-4" />
-          Generate
+        <Button
+          className="gap-2 text-white hover:opacity-90"
+          style={{ backgroundColor: '#ff7900' }}
+          onClick={onExport}
+        >
+          <Download className="h-4 w-4" />
+          Export
         </Button>
       </div>
     </motion.div>

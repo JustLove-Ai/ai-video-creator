@@ -12,12 +12,28 @@ import { ThemePanel } from "./panels/ThemePanel";
 import { ImageUploadPanel } from "./panels/ImageUploadPanel";
 import { ChartsPanel } from "./panels/ChartsPanel";
 import { VideoPreviewPanel } from "./panels/VideoPreviewPanel";
+import { VideoSettingsPanel } from "./panels/VideoSettingsPanel";
 import { Scene, RightPanelType, Theme, LayoutType, ChartData } from "@/types";
 import { themePresets, mergeTheme } from "@/lib/themes";
 import { parseScriptToLayout, preserveContentOnLayoutChange } from "@/lib/layouts";
 import { getProject, updateProject, type VideoProjectWithScenes } from "@/app/actions/projects";
 import { updateScene } from "@/app/actions/scenes";
 import type { Scene as PrismaScene, Prisma } from "@prisma/client";
+import type { TransitionType, TransitionDirection, CaptionSettings } from "./panels/VideoSettingsPanel";
+
+interface VideoSettings {
+  captions: CaptionSettings;
+  transitionType: TransitionType;
+  transitionDirection: TransitionDirection;
+  slideAnimations: boolean;
+  animationStyle: "fade" | "slide" | "zoom" | "none";
+}
+
+interface AudioSettings {
+  voice: string;
+  speed: number;
+  pitch: number;
+}
 
 interface VideoEditorProps {
   projectId: string;
@@ -36,6 +52,27 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
   const [isPending, startTransition] = useTransition();
   const [showVideoPreview, setShowVideoPreview] = useState(false);
   const [selectedVoice, setSelectedVoice] = useState('alloy');
+
+  // Video and Audio Settings
+  const [videoSettings, setVideoSettings] = useState<VideoSettings>({
+    captions: {
+      enabled: true,
+      style: "word-by-word",
+      position: "bottom",
+      maxLines: 2,
+      highlightColor: "#ff7900",
+    },
+    transitionType: "fade",
+    transitionDirection: "from-right",
+    slideAnimations: true,
+    animationStyle: "fade",
+  });
+
+  const [audioSettings, setAudioSettings] = useState<AudioSettings>({
+    voice: "alloy",
+    speed: 1.0,
+    pitch: 1.0,
+  });
 
   // Load project on mount
   useEffect(() => {
@@ -73,6 +110,27 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
           } catch (error) {
             console.error("Failed to load theme from database, using default:", error);
             setActiveTheme(themePresets[0]);
+          }
+        }
+
+        // Load video settings from project
+        if (loadedProject.videoSettings) {
+          try {
+            const dbVideoSettings = loadedProject.videoSettings as unknown as VideoSettings;
+            setVideoSettings(dbVideoSettings);
+          } catch (error) {
+            console.error("Failed to load video settings:", error);
+          }
+        }
+
+        // Load audio settings from project
+        if (loadedProject.audioSettings) {
+          try {
+            const dbAudioSettings = loadedProject.audioSettings as unknown as AudioSettings;
+            setAudioSettings(dbAudioSettings);
+            setSelectedVoice(dbAudioSettings.voice);
+          } catch (error) {
+            console.error("Failed to load audio settings:", error);
           }
         }
       } catch (error) {
@@ -278,6 +336,7 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
         projectTitle={project?.title || "Untitled Video"}
         onTitleUpdate={handleTitleUpdate}
         onPreview={() => setShowVideoPreview(true)}
+        onExport={() => setRightPanel("videoSettings")}
       />
 
       {/* Main Content Area */}
@@ -407,6 +466,85 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
               currentTheme={activeScene?.themeOverride ? mergeTheme(activeTheme, activeScene.themeOverride) : activeTheme}
             />
           )}
+          {rightPanel === "videoSettings" && (
+            <VideoSettingsPanel
+              onClose={() => setRightPanel(null)}
+              onExport={async (newVideoSettings, newAudioSettings) => {
+                try {
+                  // Store settings in state
+                  setVideoSettings(newVideoSettings);
+                  setAudioSettings(newAudioSettings);
+
+                  // Save settings to database
+                  if (project) {
+                    startTransition(async () => {
+                      try {
+                        await updateProject(project.id, {
+                          videoSettings: newVideoSettings as Prisma.InputJsonValue,
+                          audioSettings: newAudioSettings as Prisma.InputJsonValue,
+                        });
+                        console.log("Settings saved to database");
+                      } catch (error) {
+                        console.error("Failed to save settings:", error);
+                      }
+                    });
+                  }
+
+                  // Close the settings panel
+                  setRightPanel(null);
+
+                  toast.info("Preparing video export...");
+
+                  const response = await fetch("/api/export-video", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      scenes,
+                      theme: activeTheme,
+                      videoSettings: newVideoSettings,
+                      audioSettings: newAudioSettings,
+                    }),
+                  });
+
+                  const data = await response.json();
+
+                  if (response.ok) {
+                    toast.success(data.message || "Video exported successfully!");
+                    console.log("Export response:", data);
+                  } else {
+                    toast.error(data.error || "Failed to export video");
+                  }
+                } catch (error) {
+                  console.error("Export error:", error);
+                  toast.error("Failed to export video");
+                }
+              }}
+              onPreview={(newVideoSettings, newAudioSettings) => {
+                // Store settings in state
+                setVideoSettings(newVideoSettings);
+                setAudioSettings(newAudioSettings);
+
+                // Save settings to database
+                if (project) {
+                  startTransition(async () => {
+                    try {
+                      await updateProject(project.id, {
+                        videoSettings: newVideoSettings as Prisma.InputJsonValue,
+                        audioSettings: newAudioSettings as Prisma.InputJsonValue,
+                      });
+                      console.log("Settings saved to database");
+                    } catch (error) {
+                      console.error("Failed to save settings:", error);
+                    }
+                  });
+                }
+
+                setShowVideoPreview(true);
+                setRightPanel(null); // Close settings panel
+              }}
+              initialVoice={audioSettings.voice}
+            />
+          )}
         </AnimatePresence>
       </div>
 
@@ -415,7 +553,8 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
         <VideoPreviewPanel
           scenes={scenes}
           theme={activeTheme}
-          voice={selectedVoice}
+          voice={audioSettings.voice}
+          videoSettings={videoSettings}
           onClose={() => setShowVideoPreview(false)}
           onScenesUpdate={(updatedScenes) => {
             // Update local state with prepared scenes (includes audio URLs)

@@ -102,7 +102,7 @@ export interface Scene {
 }
 
 // Panel Types
-export type RightPanelType = "layout" | "theme" | "imageUpload" | "charts" | null;
+export type RightPanelType = "layout" | "theme" | "imageUpload" | "charts" | "videoSettings" | null;
 
 // Tool Types (extended)
 export type ToolType =

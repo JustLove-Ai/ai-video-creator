@@ -11,13 +11,15 @@ datasource db {
 }
 
 model VideoProject {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  title       String
-  aspectRatio String   @default("16:9")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  scenes      Scene[]
-  theme       Json? // Store theme configuration
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  title           String
+  aspectRatio     String   @default("16:9")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  scenes          Scene[]
+  theme           Json? // Store theme configuration
+  videoSettings   Json? // Store video settings (captions, transitions, animations)
+  audioSettings   Json? // Store audio settings (voice, speed, pitch)
 
   @@map("video_projects")
 }

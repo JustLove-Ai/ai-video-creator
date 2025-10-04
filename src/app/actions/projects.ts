@@ -79,7 +79,13 @@ export async function getProjects(): Promise<VideoProjectWithScenes[]> {
  */
 export async function updateProject(
   projectId: string,
-  data: { title?: string; aspectRatio?: string; theme?: Prisma.InputJsonValue }
+  data: {
+    title?: string;
+    aspectRatio?: string;
+    theme?: Prisma.InputJsonValue;
+    videoSettings?: Prisma.InputJsonValue;
+    audioSettings?: Prisma.InputJsonValue;
+  }
 ): Promise<VideoProjectWithScenes> {
   const project = await prisma.videoProject.update({
     where: { id: projectId },

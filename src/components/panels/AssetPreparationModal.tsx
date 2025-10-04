@@ -1,14 +1,16 @@
 "use client";
 
 import { motion } from 'framer-motion';
-import { Loader2, Check, AlertCircle } from 'lucide-react';
+import { Loader2, Check, AlertCircle, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import type { AssetPreparationProgress } from '@/lib/assetPreparation';
 
 interface AssetPreparationModalProps {
   progress: AssetPreparationProgress;
+  onCancel?: () => void;
 }
 
-export function AssetPreparationModal({ progress }: AssetPreparationModalProps) {
+export function AssetPreparationModal({ progress, onCancel }: AssetPreparationModalProps) {
   const percentage = progress.total > 0
     ? Math.round((progress.completed / progress.total) * 100)
     : 0;
@@ -64,6 +66,20 @@ export function AssetPreparationModal({ progress }: AssetPreparationModalProps) 
           <div className="mt-4 p-3 bg-muted/20 rounded-lg text-xs text-muted-foreground">
             <p>We're preparing your audio and images for the video preview.</p>
             <p className="mt-1">This may take a moment depending on the number of scenes.</p>
+          </div>
+        )}
+
+        {/* Cancel Button */}
+        {progress.status === 'preparing' && onCancel && (
+          <div className="mt-4">
+            <Button
+              variant="outline"
+              className="w-full gap-2"
+              onClick={onCancel}
+            >
+              <X className="h-4 w-4" />
+              Cancel
+            </Button>
           </div>
         )}
       </motion.div>

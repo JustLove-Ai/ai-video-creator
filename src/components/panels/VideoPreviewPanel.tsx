@@ -8,18 +8,28 @@ import { Button } from '@/components/ui/button';
 import { X, Download } from 'lucide-react';
 import { prepareVideoAssets, type AssetPreparationProgress } from '@/lib/assetPreparation';
 import { AssetPreparationModal } from './AssetPreparationModal';
+import type { TransitionType, TransitionDirection, CaptionSettings } from './VideoSettingsPanel';
+
+interface VideoSettings {
+  captions: CaptionSettings;
+  transitionType: TransitionType;
+  transitionDirection: TransitionDirection;
+  slideAnimations: boolean;
+  animationStyle: "fade" | "slide" | "zoom" | "none";
+}
 
 interface VideoPreviewPanelProps {
   scenes: Scene[];
   theme: Theme;
   voice: string;
+  videoSettings?: VideoSettings;
   onClose: () => void;
   onScenesUpdate?: (scenes: Scene[]) => void;
 }
 
 const FPS = 30;
 
-export function VideoPreviewPanel({ scenes, theme, voice, onClose, onScenesUpdate }: VideoPreviewPanelProps) {
+export function VideoPreviewPanel({ scenes, theme, voice, videoSettings, onClose, onScenesUpdate }: VideoPreviewPanelProps) {
   const [preparedScenes, setPreparedScenes] = useState<Scene[] | null>(null);
   const [progress, setProgress] = useState<AssetPreparationProgress>({
     total: 0,
@@ -27,18 +37,30 @@ export function VideoPreviewPanel({ scenes, theme, voice, onClose, onScenesUpdat
     currentTask: 'Initializing...',
     status: 'preparing',
   });
+  const [isCancelled, setIsCancelled] = useState(false);
 
   // Prepare assets when component mounts
   useEffect(() => {
+    let cancelled = false;
+
     async function prepare() {
       try {
         const prepared = await prepareVideoAssets(scenes, setProgress, voice);
+
+        // Check if cancelled during preparation
+        if (cancelled || isCancelled) {
+          return;
+        }
+
         setPreparedScenes(prepared);
         // Update parent component with prepared scenes (includes audio URLs)
         if (onScenesUpdate) {
           onScenesUpdate(prepared);
         }
       } catch (error) {
+        if (cancelled || isCancelled) {
+          return;
+        }
         console.error('Failed to prepare assets:', error);
         setProgress({
           ...progress,
@@ -48,11 +70,20 @@ export function VideoPreviewPanel({ scenes, theme, voice, onClose, onScenesUpdat
       }
     }
     prepare();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
+
+  const handleCancel = () => {
+    setIsCancelled(true);
+    onClose();
+  };
 
   // Show preparation modal while assets are being prepared
   if (!preparedScenes || progress.status === 'preparing') {
-    return <AssetPreparationModal progress={progress} />;
+    return <AssetPreparationModal progress={progress} onCancel={handleCancel} />;
   }
 
   // Show error if preparation failed
@@ -112,6 +143,19 @@ export function VideoPreviewPanel({ scenes, theme, voice, onClose, onScenesUpdat
                 scenes: preparedScenes,
                 theme,
                 fps: FPS,
+                videoSettings: videoSettings || {
+                  captions: {
+                    enabled: false,
+                    style: "full-text",
+                    position: "bottom",
+                    maxLines: 2,
+                    highlightColor: "#ff7900",
+                  },
+                  transitionType: "none",
+                  transitionDirection: "from-right",
+                  slideAnimations: false,
+                  animationStyle: "none",
+                },
               }}
               durationInFrames={totalDurationInFrames}
               fps={FPS}
