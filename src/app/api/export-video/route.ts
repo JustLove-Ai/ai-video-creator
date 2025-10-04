@@ -1,14 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { bundle } from "@remotion/bundler";
 import { renderMedia, selectComposition } from "@remotion/renderer";
-import { createWriteStream } from "fs";
-import { mkdir } from "fs/promises";
+import { mkdir, readFile } from "fs/promises";
 import path from "path";
 import os from "os";
 import { Scene, Theme } from "@/types";
+import { getCompositions } from "@remotion/renderer";
 
-// This API route is temporarily disabled as it needs proper setup
-// For now, we'll return a message that video export is coming soon
 export async function POST(request: NextRequest) {
   try {
     const { scenes, theme, videoSettings, audioSettings } = await request.json();
@@ -20,66 +18,107 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // TODO: Implement actual video rendering
-    // The implementation requires:
-    // 1. Bundle the Remotion composition
-    // 2. Render the video using renderMedia()
-    // 3. Return the video file URL or stream
+    console.log("Starting video export...");
 
-    return NextResponse.json(
-      {
-        message: "Video export functionality is coming soon!",
-        settings: { videoSettings, audioSettings },
-        sceneCount: scenes.length,
-      },
-      { status: 200 }
-    );
+    // Calculate total duration in frames
+    const FPS = 30;
+    const totalDurationInFrames = scenes.reduce((total: number, scene: Scene) => {
+      return total + Math.round(scene.duration * FPS);
+    }, 0);
 
-    /* Future implementation:
-
-    // 1. Create temp directory for output
-    const outputDir = path.join(os.tmpdir(), `remotion-${Date.now()}`);
+    // 1. Create output directory in public folder
+    const outputDir = path.join(process.cwd(), "public", "exports");
     await mkdir(outputDir, { recursive: true });
-    const outputPath = path.join(outputDir, "output.mp4");
+    const timestamp = Date.now();
+    const outputPath = path.join(outputDir, `video-${timestamp}.mp4`);
+
+    console.log("Output path:", outputPath);
 
     // 2. Bundle Remotion composition
+    console.log("Bundling Remotion composition...");
     const bundled = await bundle({
       entryPoint: path.join(process.cwd(), "src/remotion/index.ts"),
       webpackOverride: (config) => config,
     });
 
-    // 3. Get composition
-    const composition = await selectComposition({
-      serveUrl: bundled,
-      id: "VideoComposition",
+    console.log("Bundled at:", bundled);
+
+    // 3. Get all compositions
+    const compositions = await getCompositions(bundled, {
       inputProps: {
         scenes,
         theme,
-        fps: 30,
+        fps: FPS,
+        videoSettings: videoSettings || {
+          captions: {
+            enabled: false,
+            style: "full-text",
+            position: "bottom",
+            maxLines: 2,
+            highlightColor: "#ff7900",
+          },
+          transitionType: "none",
+          transitionDirection: "from-right",
+          slideAnimations: false,
+          animationStyle: "none",
+        },
       },
     });
 
+    const composition = compositions.find((c) => c.id === "VideoComposition");
+
+    if (!composition) {
+      throw new Error("VideoComposition not found");
+    }
+
+    console.log("Found composition:", composition.id);
+
     // 4. Render video
+    console.log("Rendering video...");
     await renderMedia({
-      composition,
+      composition: {
+        ...composition,
+        durationInFrames: totalDurationInFrames,
+      },
       serveUrl: bundled,
       codec: "h264",
       outputLocation: outputPath,
       inputProps: {
         scenes,
         theme,
-        fps: 30,
+        fps: FPS,
+        videoSettings: videoSettings || {
+          captions: {
+            enabled: false,
+            style: "full-text",
+            position: "bottom",
+            maxLines: 2,
+            highlightColor: "#ff7900",
+          },
+          transitionType: "none",
+          transitionDirection: "from-right",
+          slideAnimations: false,
+          animationStyle: "none",
+        },
       },
     });
 
-    // 5. Return the video file
-    // This would need proper file serving implementation
-    return NextResponse.json({ videoUrl: outputPath });
-    */
+    console.log("Video rendered successfully!");
+
+    // 5. Return the video file URL
+    const videoUrl = `/exports/video-${timestamp}.mp4`;
+
+    return NextResponse.json({
+      success: true,
+      videoUrl,
+      duration: totalDurationInFrames / FPS,
+      sceneCount: scenes.length,
+    });
+
   } catch (error) {
     console.error("Export video error:", error);
     return NextResponse.json(
-      { error: "Failed to export video" },
+      { error: error instanceof Error ? error.message : "Failed to export video" },
       { status: 500 }
     );
   }

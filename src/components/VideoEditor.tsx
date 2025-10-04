@@ -508,9 +508,17 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
 
                   const data = await response.json();
 
-                  if (response.ok) {
-                    toast.success(data.message || "Video exported successfully!");
+                  if (response.ok && data.success && data.videoUrl) {
+                    toast.success("Video exported successfully!");
                     console.log("Export response:", data);
+
+                    // Download the video
+                    const link = document.createElement('a');
+                    link.href = data.videoUrl;
+                    link.download = `video-${Date.now()}.mp4`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
                   } else {
                     toast.error(data.error || "Failed to export video");
                   }

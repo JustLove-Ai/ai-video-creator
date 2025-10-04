@@ -38,6 +38,7 @@ export function VideoPreviewPanel({ scenes, theme, voice, videoSettings, onClose
     status: 'preparing',
   });
   const [isCancelled, setIsCancelled] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Prepare assets when component mounts
   useEffect(() => {
@@ -81,6 +82,56 @@ export function VideoPreviewPanel({ scenes, theme, voice, videoSettings, onClose
     onClose();
   };
 
+  const handleExport = async () => {
+    if (!preparedScenes) return;
+
+    setIsExporting(true);
+    try {
+      const response = await fetch('/api/export-video', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          scenes: preparedScenes,
+          theme,
+          videoSettings: videoSettings || {
+            captions: {
+              enabled: false,
+              style: "full-text",
+              position: "bottom",
+              maxLines: 2,
+              highlightColor: "#ff7900",
+            },
+            transitionType: "none",
+            transitionDirection: "from-right",
+            slideAnimations: false,
+            animationStyle: "none",
+          },
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.videoUrl) {
+        // Download the video
+        const link = document.createElement('a');
+        link.href = data.videoUrl;
+        link.download = `video-${Date.now()}.mp4`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else {
+        alert(`Export failed: ${data.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Export error:', error);
+      alert('Failed to export video. Check console for details.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   // Show preparation modal while assets are being prepared
   if (!preparedScenes || progress.status === 'preparing') {
     return <AssetPreparationModal progress={progress} onCancel={handleCancel} />;
@@ -117,12 +168,11 @@ export function VideoPreviewPanel({ scenes, theme, voice, videoSettings, onClose
               variant="outline"
               size="sm"
               className="gap-2"
-              onClick={() => {
-                alert('Export functionality coming soon!');
-              }}
+              onClick={handleExport}
+              disabled={isExporting}
             >
               <Download className="h-4 w-4" />
-              Export MP4
+              {isExporting ? 'Exporting...' : 'Export MP4'}
             </Button>
             <Button
               variant="ghost"
