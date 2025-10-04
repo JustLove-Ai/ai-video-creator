@@ -40,8 +40,10 @@ export function EditableImage({
       style={{ ...style, aspectRatio: bleed ? undefined : aspectRatio }}
       onClick={onReplace}
     >
-      <img src={src} alt={alt} className={`w-full h-full ${bleed ? 'object-cover' : 'object-cover'}`} />
-      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all" />
+      <img src={src} alt={alt} className={`w-full h-full object-cover`} />
+      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all flex items-center justify-center">
+        <ImageIcon className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+      </div>
     </div>
   );
 }

@@ -30,6 +30,7 @@ import { YOUTUBE_SCRIPT_PROMPT, AI_GENERATION_SYSTEM_PROMPT } from "@/lib/consta
 import { generateYouTubeScript, generateSceneContent, generateSpeech } from "@/app/actions/openai";
 import { createScene, updateScene, deleteScene } from "@/app/actions/scenes";
 import { getProject } from "@/app/actions/projects";
+import { getAudioDuration } from "@/lib/audioUtils";
 import { useTransition } from "react";
 import type { Prisma } from "@prisma/client";
 
@@ -40,6 +41,7 @@ interface LeftSidebarProps {
   setActiveSceneId: (id: string) => void;
   currentTheme: Theme;
   projectId: string;
+  onVoiceChange?: (voiceId: string) => void;
 }
 
 // OpenAI TTS Voices
@@ -59,9 +61,18 @@ export function LeftSidebar({
   setActiveSceneId,
   currentTheme,
   projectId,
+  onVoiceChange,
 }: LeftSidebarProps) {
   const [editingSceneId, setEditingSceneId] = useState<string | null>(null);
   const [selectedVoice, setSelectedVoice] = useState(OPENAI_VOICES[0]);
+
+  // Notify parent when voice changes
+  const handleVoiceChange = (voice: typeof OPENAI_VOICES[0]) => {
+    setSelectedVoice(voice);
+    if (onVoiceChange) {
+      onVoiceChange(voice.id);
+    }
+  };
   const [aiPromptSceneId, setAiPromptSceneId] = useState<string | null>(null);
   const [aiPrompt, setAiPrompt] = useState<string>("");
   const [isGeneratingAI, setIsGeneratingAI] = useState<string | null>(null);
@@ -270,11 +281,21 @@ export function LeftSidebar({
       try {
         const result = await generateSpeech(scene.content, selectedVoice.id, sceneId);
 
-        // Update local state with audio URL
+        // Calculate audio duration
+        let audioDuration = scene.duration; // Default to current duration
+        try {
+          audioDuration = await getAudioDuration(result.url);
+          // Update scene duration in database
+          await updateScene(sceneId, { duration: Math.ceil(audioDuration) });
+        } catch (error) {
+          console.error("Failed to calculate audio duration:", error);
+        }
+
+        // Update local state with audio URL and duration
         setScenes((prev: Scene[]) =>
           prev.map(s =>
             s.id === sceneId
-              ? { ...s, audioUrl: result.url }
+              ? { ...s, audioUrl: result.url, duration: Math.ceil(audioDuration) }
               : s
           )
         );
@@ -343,7 +364,7 @@ export function LeftSidebar({
             {OPENAI_VOICES.map((voice) => (
               <DropdownMenuItem
                 key={voice.id}
-                onClick={() => setSelectedVoice(voice)}
+                onClick={() => handleVoiceChange(voice)}
                 className="flex flex-col items-start py-2"
               >
                 <div className="font-medium">{voice.name}</div>
@@ -579,7 +600,7 @@ export function LeftSidebar({
               </Card>
             </motion.div>
           ))}
-          </div>
+        </div>
         </ScrollArea>
       </div>
     </div>

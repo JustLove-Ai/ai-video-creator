@@ -33,6 +33,7 @@ interface TopToolbarProps {
   onAnnotationModeToggle: () => void;
   projectTitle: string;
   onTitleUpdate: (newTitle: string) => void;
+  onPreview: () => void;
 }
 
 const tools = [
@@ -54,6 +55,7 @@ export function TopToolbar({
   onAnnotationModeToggle,
   projectTitle,
   onTitleUpdate,
+  onPreview,
 }: TopToolbarProps) {
   const [videoTitle, setVideoTitle] = useState(projectTitle);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -193,7 +195,7 @@ export function TopToolbar({
           <Save className="h-4 w-4" />
           Save
         </Button>
-        <Button variant="outline" size="sm" className="gap-2">
+        <Button variant="outline" size="sm" className="gap-2" onClick={onPreview}>
           <Eye className="h-4 w-4" />
           Preview
         </Button>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useTransition } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
 import { TopToolbar } from "./TopToolbar";
 import { LeftSidebar } from "./LeftSidebar";
 import { VideoCanvas } from "./VideoCanvas";
@@ -10,6 +11,7 @@ import { LayoutPanel } from "./panels/LayoutPanel";
 import { ThemePanel } from "./panels/ThemePanel";
 import { ImageUploadPanel } from "./panels/ImageUploadPanel";
 import { ChartsPanel } from "./panels/ChartsPanel";
+import { VideoPreviewPanel } from "./panels/VideoPreviewPanel";
 import { Scene, RightPanelType, Theme, LayoutType, ChartData } from "@/types";
 import { themePresets, mergeTheme } from "@/lib/themes";
 import { parseScriptToLayout, preserveContentOnLayoutChange } from "@/lib/layouts";
@@ -32,6 +34,8 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
   const [project, setProject] = useState<VideoProjectWithScenes | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
+  const [showVideoPreview, setShowVideoPreview] = useState(false);
+  const [selectedVoice, setSelectedVoice] = useState('alloy');
 
   // Load project on mount
   useEffect(() => {
@@ -273,6 +277,7 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
         onAnnotationModeToggle={() => setAnnotationMode(!annotationMode)}
         projectTitle={project?.title || "Untitled Video"}
         onTitleUpdate={handleTitleUpdate}
+        onPreview={() => setShowVideoPreview(true)}
       />
 
       {/* Main Content Area */}
@@ -291,6 +296,7 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
             setActiveSceneId={setActiveSceneId}
             currentTheme={activeTheme}
             projectId={project?.id || ""}
+            onVoiceChange={setSelectedVoice}
           />
         </motion.div>
 
@@ -361,10 +367,37 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
               onClose={() => setRightPanel(null)}
             />
           )}
-          {rightPanel === "imageUpload" && (
+          {rightPanel === "imageUpload" && activeScene && (
             <ImageUploadPanel
               onClose={() => setRightPanel(null)}
               onImageSelect={handleImageSelect}
+              imageBleed={activeScene.layoutContent.imageBleed || false}
+              onImageBleedChange={(bleed) => {
+                console.log('🔄 Updating image bleed:', bleed);
+                const updatedLayoutContent = { ...activeScene.layoutContent, imageBleed: bleed };
+
+                setScenes((prev) =>
+                  prev.map((s) =>
+                    s.id === activeSceneId
+                      ? { ...s, layoutContent: updatedLayoutContent }
+                      : s
+                  )
+                );
+
+                // Also save to database
+                startTransition(async () => {
+                  try {
+                    console.log('💾 Saving to database:', { sceneId: activeSceneId, layoutContent: updatedLayoutContent });
+                    await updateScene(activeSceneId, {
+                      layoutContent: updatedLayoutContent as Prisma.InputJsonValue,
+                    });
+                    toast.success(bleed ? "Image bleed enabled" : "Image bleed disabled");
+                  } catch (error) {
+                    console.error("Failed to update image bleed:", error);
+                    toast.error("Failed to save changes");
+                  }
+                });
+              }}
             />
           )}
           {rightPanel === "charts" && (
@@ -376,6 +409,20 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
           )}
         </AnimatePresence>
       </div>
+
+      {/* Video Preview Panel */}
+      {showVideoPreview && (
+        <VideoPreviewPanel
+          scenes={scenes}
+          theme={activeTheme}
+          voice={selectedVoice}
+          onClose={() => setShowVideoPreview(false)}
+          onScenesUpdate={(updatedScenes) => {
+            // Update local state with prepared scenes (includes audio URLs)
+            setScenes(updatedScenes);
+          }}
+        />
+      )}
     </div>
   );
 }

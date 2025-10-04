@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { X, Upload, Sparkles, Image as ImageIcon, Trash2, Edit2 } from "lucide-react";
 import { getImageLibrary, addImageToLibrary, deleteImageFromLibrary, ImageMetadata } from "@/lib/imageLibrary";
 import { generateImage } from "@/app/actions/openai";
@@ -13,9 +15,11 @@ import { generateImage } from "@/app/actions/openai";
 interface ImageUploadPanelProps {
   onClose: () => void;
   onImageSelect: (url: string) => void;
+  imageBleed?: boolean;
+  onImageBleedChange?: (bleed: boolean) => void;
 }
 
-export function ImageUploadPanel({ onClose, onImageSelect }: ImageUploadPanelProps) {
+export function ImageUploadPanel({ onClose, onImageSelect, imageBleed = false, onImageBleedChange }: ImageUploadPanelProps) {
   const [activeTab, setActiveTab] = useState<"upload" | "ai" | "library">("library");
   const [aiPrompt, setAiPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -318,6 +322,27 @@ export function ImageUploadPanel({ onClose, onImageSelect }: ImageUploadPanelPro
 
         </div>
       </ScrollArea>
+
+      {/* Image Bleed Toggle (only show if callback is provided) */}
+      {onImageBleedChange && (
+        <div className="p-4 border-t border-border bg-muted/30">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <Label htmlFor="image-bleed" className="text-sm font-medium cursor-pointer">
+                Image Bleed
+              </Label>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Stretch image to edges without padding
+              </p>
+            </div>
+            <Switch
+              id="image-bleed"
+              checked={imageBleed}
+              onCheckedChange={onImageBleedChange}
+            />
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 }

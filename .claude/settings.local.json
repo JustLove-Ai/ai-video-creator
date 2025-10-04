@@ -16,7 +16,8 @@
       "Bash(npx prisma generate:*)",
       "Bash(npm run dev:*)",
       "Bash(curl -X POST http://localhost:3004/api/generate-script -H \"Content-Type: application/json\" -d '{\"\"\"\"topic\"\"\"\":\"\"\"\"test\"\"\"\"}')",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(npx shadcn@latest add:*)"
     ],
     "deny": [],
     "ask": []

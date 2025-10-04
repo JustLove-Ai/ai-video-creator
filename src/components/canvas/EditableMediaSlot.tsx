@@ -43,16 +43,11 @@ export function EditableMediaSlot({
       <div
         className={`relative ${bleed ? '' : 'rounded-lg'} overflow-hidden group cursor-pointer ${className}`}
         style={{ ...style, aspectRatio: bleed ? undefined : aspectRatio }}
+        onClick={onImageReplace}
       >
         <img src={imageUrl} alt="Slide media" className="w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
-          <button
-            onClick={onImageReplace}
-            className="px-3 py-2 bg-white rounded-lg text-sm font-medium flex items-center gap-2 hover:bg-gray-100 transition-colors"
-          >
-            <ImageIcon className="h-4 w-4" />
-            Change Image
-          </button>
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all flex items-center justify-center">
+          <ImageIcon className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
         </div>
       </div>
     );
