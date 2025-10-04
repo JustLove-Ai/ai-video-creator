@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useTransition } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { TopToolbar } from "./TopToolbar";
 import { LeftSidebar } from "./LeftSidebar";
@@ -13,29 +13,83 @@ import { ChartsPanel } from "./panels/ChartsPanel";
 import { Scene, RightPanelType, Theme, LayoutType, ChartData } from "@/types";
 import { themePresets, mergeTheme } from "@/lib/themes";
 import { parseScriptToLayout, preserveContentOnLayoutChange } from "@/lib/layouts";
+import { getProject, updateProject, type VideoProjectWithScenes } from "@/app/actions/projects";
+import { updateScene } from "@/app/actions/scenes";
+import type { Scene as PrismaScene, Prisma } from "@prisma/client";
 
-export function VideoEditor() {
+interface VideoEditorProps {
+  projectId: string;
+}
+
+export function VideoEditor({ projectId }: VideoEditorProps) {
   const [selectedTool, setSelectedTool] = useState<string | null>(null);
   const [rightPanel, setRightPanel] = useState<RightPanelType>(null);
   const [annotationMode, setAnnotationMode] = useState(false);
-  const [activeTheme, setActiveTheme] = useState<Theme>(themePresets[0]); // Light Minimalist
-  const [scenes, setScenes] = useState<Scene[]>([
-    {
-      id: "1",
-      content: "Welcome to our presentation! Today we'll explore the amazing world of AI-generated content.",
-      duration: 5,
-      layout: "cover",
-      layoutContent: {
-        title: "Welcome to our presentation!",
-        subtitle: "Today we'll explore the amazing world of AI-generated content.",
-      },
-      annotations: [],
-    },
-  ]);
-  const [activeSceneId, setActiveSceneId] = useState("1");
+  const [activeTheme, setActiveTheme] = useState<Theme>(themePresets[0]);
+  const [scenes, setScenes] = useState<Scene[]>([]);
+  const [activeSceneId, setActiveSceneId] = useState<string>("");
   const [isTimelineExpanded, setIsTimelineExpanded] = useState(false);
+  const [project, setProject] = useState<VideoProjectWithScenes | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isPending, startTransition] = useTransition();
+
+  // Load project on mount
+  useEffect(() => {
+    async function initializeProject() {
+      try {
+        const loadedProject = await getProject(projectId);
+
+        if (!loadedProject) {
+          // Project not found, redirect to home
+          window.location.href = "/";
+          return;
+        }
+
+        // Convert Prisma scenes to Scene type
+        const convertedScenes: Scene[] = loadedProject.scenes.map((s) => ({
+          id: s.id,
+          content: s.content,
+          duration: s.duration,
+          layout: s.layout as LayoutType,
+          layoutContent: s.layoutContent as unknown as Scene["layoutContent"],
+          annotations: (s.annotations as unknown as Scene["annotations"]) || [],
+          themeOverride: s.themeOverride as unknown as Partial<Theme> | undefined,
+        }));
+
+        setProject(loadedProject);
+        setScenes(convertedScenes);
+        setActiveSceneId(convertedScenes[0]?.id || "");
+
+        // Load theme from project or use default
+        if (loadedProject.theme) {
+          try {
+            const dbTheme = loadedProject.theme as unknown as Theme;
+            // Merge with default theme to ensure all properties exist
+            setActiveTheme(mergeTheme(themePresets[0], dbTheme as Partial<Theme>));
+          } catch (error) {
+            console.error("Failed to load theme from database, using default:", error);
+            setActiveTheme(themePresets[0]);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to initialize project:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    initializeProject();
+  }, [projectId]);
 
   const activeScene = scenes.find((s) => s.id === activeSceneId);
+
+  if (isLoading) {
+    return (
+      <div className="h-screen bg-background flex items-center justify-center">
+        <div className="text-muted-foreground">Loading project...</div>
+      </div>
+    );
+  }
 
   // Handle layout change
   const handleLayoutChange = (layout: LayoutType) => {
@@ -44,6 +98,7 @@ export function VideoEditor() {
     const preservedContent = preserveContentOnLayoutChange(activeScene.layoutContent, layout);
     const newContent = parseScriptToLayout(activeScene.content, layout, preservedContent);
 
+    // Update local state immediately
     setScenes((prev) =>
       prev.map((s) =>
         s.id === activeSceneId
@@ -51,14 +106,39 @@ export function VideoEditor() {
           : s
       )
     );
+
+    // Save to database
+    startTransition(async () => {
+      try {
+        await updateScene(activeSceneId, {
+          layout,
+          layoutContent: newContent as Prisma.InputJsonValue,
+        });
+      } catch (error) {
+        console.error("Failed to update scene layout:", error);
+      }
+    });
   };
 
   // Handle theme change
   const handleThemeChange = (theme: Theme, applyToAll: boolean) => {
     if (applyToAll) {
       setActiveTheme(theme);
-      // Remove all per-scene overrides
       setScenes((prev) => prev.map((s) => ({ ...s, themeOverride: undefined })));
+
+      // Save to database
+      startTransition(async () => {
+        if (!project) return;
+        try {
+          await updateProject(project.id, { theme: theme as Prisma.InputJsonValue });
+          // Clear all scene theme overrides
+          for (const scene of scenes) {
+            await updateScene(scene.id, { themeOverride: undefined });
+          }
+        } catch (error) {
+          console.error("Failed to update theme:", error);
+        }
+      });
     } else {
       // Apply to current scene only
       setScenes((prev) =>
@@ -66,12 +146,35 @@ export function VideoEditor() {
           s.id === activeSceneId ? { ...s, themeOverride: theme } : s
         )
       );
+
+      // Save to database
+      startTransition(async () => {
+        try {
+          await updateScene(activeSceneId, { themeOverride: theme as Prisma.InputJsonValue });
+        } catch (error) {
+          console.error("Failed to update scene theme:", error);
+        }
+      });
     }
   };
 
   // Handle scene update
   const handleSceneUpdate = (updatedScene: Scene) => {
     setScenes((prev) => prev.map((s) => (s.id === activeSceneId ? updatedScene : s)));
+
+    // Save to database
+    startTransition(async () => {
+      try {
+        await updateScene(updatedScene.id, {
+          content: updatedScene.content,
+          duration: updatedScene.duration,
+          layoutContent: updatedScene.layoutContent as Prisma.InputJsonValue,
+          annotations: updatedScene.annotations as Prisma.InputJsonValue,
+        });
+      } catch (error) {
+        console.error("Failed to update scene:", error);
+      }
+    });
   };
 
   // Handle image upload/selection
@@ -83,11 +186,24 @@ export function VideoEditor() {
         s.id === activeSceneId
           ? {
               ...s,
+              imageUrl: url,
               layoutContent: { ...s.layoutContent, imageUrl: url },
             }
           : s
       )
     );
+
+    // Save to database
+    startTransition(async () => {
+      try {
+        await updateScene(activeSceneId, {
+          imageUrl: url,
+          layoutContent: { ...activeScene.layoutContent, imageUrl: url } as Prisma.InputJsonValue,
+        });
+      } catch (error) {
+        console.error("Failed to update scene image:", error);
+      }
+    });
   };
 
   // Handle chart insertion
@@ -98,22 +214,51 @@ export function VideoEditor() {
     const imageLayouts: LayoutType[] = ["imageLeft", "imageRight", "imageBullets", "fullImage", "centeredChart", "comparison"];
     const needsLayoutChange = !imageLayouts.includes(activeScene.layout);
 
+    const newLayout = needsLayoutChange ? "centeredChart" : activeScene.layout;
+    const newLayoutContent = {
+      ...activeScene.layoutContent,
+      chartData,
+      imageUrl: undefined,
+    };
+
     setScenes((prev) =>
       prev.map((s) =>
         s.id === activeSceneId
           ? {
               ...s,
-              layout: needsLayoutChange ? "centeredChart" : s.layout,
-              layoutContent: {
-                ...s.layoutContent,
-                chartData,
-                // Remove imageUrl when adding chart
-                imageUrl: undefined,
-              },
+              layout: newLayout,
+              layoutContent: newLayoutContent,
             }
           : s
       )
     );
+
+    // Save to database
+    startTransition(async () => {
+      try {
+        await updateScene(activeSceneId, {
+          layout: newLayout,
+          layoutContent: newLayoutContent as Prisma.InputJsonValue,
+        });
+      } catch (error) {
+        console.error("Failed to update scene with chart:", error);
+      }
+    });
+  };
+
+  // Handle project title update
+  const handleTitleUpdate = (newTitle: string) => {
+    if (!project) return;
+
+    setProject({ ...project, title: newTitle });
+
+    startTransition(async () => {
+      try {
+        await updateProject(project.id, { title: newTitle });
+      } catch (error) {
+        console.error("Failed to update project title:", error);
+      }
+    });
   };
 
   return (
@@ -126,6 +271,8 @@ export function VideoEditor() {
         onRightPanelChange={setRightPanel}
         annotationMode={annotationMode}
         onAnnotationModeToggle={() => setAnnotationMode(!annotationMode)}
+        projectTitle={project?.title || "Untitled Video"}
+        onTitleUpdate={handleTitleUpdate}
       />
 
       {/* Main Content Area */}
@@ -143,6 +290,7 @@ export function VideoEditor() {
             activeSceneId={activeSceneId}
             setActiveSceneId={setActiveSceneId}
             currentTheme={activeTheme}
+            projectId={project?.id || ""}
           />
         </motion.div>
 

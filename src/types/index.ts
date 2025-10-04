@@ -97,6 +97,8 @@ export interface Scene {
   layoutContent: LayoutContent;
   annotations: AnnotationElement[];
   themeOverride?: Partial<Theme>;
+  imageUrl?: string;  // Base64 data URL for scene image
+  audioUrl?: string;  // Base64 data URL for scene audio
 }
 
 // Panel Types

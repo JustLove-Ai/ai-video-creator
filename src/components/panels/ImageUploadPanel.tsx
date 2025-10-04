@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useTransition } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -8,6 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { X, Upload, Sparkles, Image as ImageIcon, Trash2, Edit2 } from "lucide-react";
 import { getImageLibrary, addImageToLibrary, deleteImageFromLibrary, ImageMetadata } from "@/lib/imageLibrary";
+import { generateImage } from "@/app/actions/openai";
 
 interface ImageUploadPanelProps {
   onClose: () => void;
@@ -21,6 +22,7 @@ export function ImageUploadPanel({ onClose, onImageSelect }: ImageUploadPanelPro
   const [imageLibrary, setImageLibrary] = useState<ImageMetadata[]>([]);
   const [libraryFilter, setLibraryFilter] = useState<"all" | "upload" | "ai-generated">("all");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
     setImageLibrary(getImageLibrary());
@@ -52,24 +54,31 @@ export function ImageUploadPanel({ onClose, onImageSelect }: ImageUploadPanelPro
     if (!aiPrompt.trim()) return;
 
     setIsGenerating(true);
-    // Simulate AI generation
-    setTimeout(() => {
-      // TODO: Integrate with actual AI image generation API
-      const placeholderUrl = `https://placehold.co/1920x1080/3b82f6/ffffff?text=${encodeURIComponent(aiPrompt.slice(0, 30))}`;
 
-      // Add to library with prompt
-      const metadata = addImageToLibrary({
-        url: placeholderUrl,
-        type: "ai-generated",
-        name: `AI: ${aiPrompt.slice(0, 50)}`,
-        prompt: aiPrompt,
-      });
+    startTransition(async () => {
+      try {
+        // Generate image using OpenAI
+        const result = await generateImage(aiPrompt);
 
-      setImageLibrary(getImageLibrary());
-      onImageSelect(placeholderUrl);
-      setIsGenerating(false);
-      onClose();
-    }, 2000);
+        // Add to library with prompt (using base64 data URL)
+        const metadata = addImageToLibrary({
+          url: result.url,
+          type: "ai-generated",
+          name: `AI: ${aiPrompt.slice(0, 50)}`,
+          prompt: aiPrompt,
+        });
+
+        setImageLibrary(getImageLibrary());
+        onImageSelect(result.url);
+        setAiPrompt(""); // Clear prompt after successful generation
+        onClose();
+      } catch (error) {
+        console.error("Failed to generate image:", error);
+        alert("Failed to generate image. Please try again.");
+      } finally {
+        setIsGenerating(false);
+      }
+    });
   };
 
   const handleLibraryImageSelect = (image: ImageMetadata) => {

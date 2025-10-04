@@ -1,7 +1,7 @@
 "use client";
 
-import { VideoEditor } from "@/components/VideoEditor";
+import { ProjectsPage } from "@/components/ProjectsPage";
 
 export default function Home() {
-  return <VideoEditor />;
+  return <ProjectsPage />;
 }

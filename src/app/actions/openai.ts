@@ -1,13 +1,11 @@
 "use server";
 
-import { openai } from "@/lib/openai";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { YOUTUBE_SCRIPT_PROMPT, AI_GENERATION_SYSTEM_PROMPT } from "@/lib/constants";
 import { Prisma } from "@prisma/client";
 
 /**
- * Generate image using gpt-image-1 model
+ * Generate image using DALL-E via API endpoint
  * Returns base64 encoded image data suitable for Remotion
  */
 export async function generateImage(prompt: string, sceneId?: string): Promise<{
@@ -15,26 +13,27 @@ export async function generateImage(prompt: string, sceneId?: string): Promise<{
   b64_json?: string;
 }> {
   try {
-    const response = await openai.images.generate({
-      model: "gpt-image-1",
-      prompt,
-      n: 1,
-      size: "1024x1024",
-      response_format: "b64_json", // Better for Remotion
+    const baseUrl = typeof window === 'undefined'
+      ? process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3005'
+      : '';
+    const response = await fetch(`${baseUrl}/api/images`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt }),
     });
 
-    if (!response.data || response.data.length === 0) {
-      throw new Error("No image data received from API");
+    if (!response.ok) {
+      throw new Error('Failed to generate image');
     }
 
-    const imageData = response.data[0];
+    const data = await response.json();
 
     // Save to database if sceneId provided
     if (sceneId) {
       await prisma.scene.update({
         where: { id: sceneId },
         data: {
-          imageUrl: `data:image/png;base64,${imageData.b64_json}`,
+          imageUrl: data.url,
           imagePrompt: prompt,
         },
       });
@@ -42,8 +41,8 @@ export async function generateImage(prompt: string, sceneId?: string): Promise<{
     }
 
     return {
-      url: `data:image/png;base64,${imageData.b64_json}`,
-      b64_json: imageData.b64_json,
+      url: data.url,
+      b64_json: data.b64_json,
     };
   } catch (error) {
     console.error("Error generating image:", error);
@@ -52,7 +51,7 @@ export async function generateImage(prompt: string, sceneId?: string): Promise<{
 }
 
 /**
- * Generate speech using OpenAI TTS
+ * Generate speech using OpenAI TTS via API endpoint
  * Returns base64 encoded audio data suitable for Remotion
  */
 export async function generateSpeech(
@@ -64,24 +63,27 @@ export async function generateSpeech(
   b64_json: string;
 }> {
   try {
-    const mp3 = await openai.audio.speech.create({
-      model: "tts-1-hd", // High quality model
-      voice,
-      input: text,
-      response_format: "mp3",
+    const baseUrl = typeof window === 'undefined'
+      ? process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3005'
+      : '';
+    const response = await fetch(`${baseUrl}/api/voices`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, voice }),
     });
 
-    // Convert response to buffer
-    const buffer = Buffer.from(await mp3.arrayBuffer());
-    const b64_json = buffer.toString("base64");
-    const audioUrl = `data:audio/mp3;base64,${b64_json}`;
+    if (!response.ok) {
+      throw new Error('Failed to generate speech');
+    }
+
+    const data = await response.json();
 
     // Save to database if sceneId provided
     if (sceneId) {
       await prisma.scene.update({
         where: { id: sceneId },
         data: {
-          audioUrl,
+          audioUrl: data.url,
           voiceId: voice,
         },
       });
@@ -94,7 +96,7 @@ export async function generateSpeech(
             projectId: scene.projectId,
             sceneId,
             type: "audio",
-            url: audioUrl,
+            url: data.url,
             model: "tts-1-hd",
             prompt: text.substring(0, 500),
           },
@@ -104,7 +106,7 @@ export async function generateSpeech(
       revalidatePath("/");
     }
 
-    return { url: audioUrl, b64_json };
+    return { url: data.url, b64_json: data.b64_json };
   } catch (error) {
     console.error("Error generating speech:", error);
     throw new Error(error instanceof Error ? error.message : "Failed to generate speech");
@@ -116,30 +118,22 @@ export async function generateSpeech(
  */
 export async function generateYouTubeScript(topic: string, projectId: string): Promise<unknown[]> {
   try {
-    const prompt = YOUTUBE_SCRIPT_PROMPT.replace("{topic}", topic);
+    const baseUrl = typeof window === 'undefined'
+      ? process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3005'
+      : '';
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        { role: "system", content: AI_GENERATION_SYSTEM_PROMPT },
-        { role: "user", content: prompt },
-      ],
-      temperature: 0.7,
-      response_format: { type: "json_object" },
+    const response = await fetch(`${baseUrl}/api/generate-script`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ topic }),
     });
 
-    const content = response.choices[0].message.content;
-    if (!content) throw new Error("No content generated");
-
-    let scriptData;
-    try {
-      scriptData = JSON.parse(content);
-    } catch {
-      throw new Error("Failed to parse AI response as JSON");
+    if (!response.ok) {
+      throw new Error('Failed to generate script');
     }
 
-    // Handle both array and object with slides property
-    const slides = Array.isArray(scriptData) ? scriptData : (scriptData as Record<string, unknown>).slides || [];
+    const data = await response.json();
+    const slides = data.slides || [];
 
     // Create scenes in database
     const scenes = await Promise.all(
@@ -161,7 +155,6 @@ export async function generateYouTubeScript(topic: string, projectId: string): P
     revalidatePath("/");
     return scenes;
   } catch (error) {
-    console.error("Error generating YouTube script:", error);
     throw new Error(error instanceof Error ? error.message : "Failed to generate script");
   }
 }

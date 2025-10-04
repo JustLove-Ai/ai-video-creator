@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -18,7 +19,8 @@ import {
   LayoutGrid,
   Palette,
   Pencil,
-  BarChart3
+  BarChart3,
+  Save
 } from "lucide-react";
 import { RightPanelType } from "@/types";
 
@@ -29,6 +31,8 @@ interface TopToolbarProps {
   onRightPanelChange: (panel: RightPanelType) => void;
   annotationMode: boolean;
   onAnnotationModeToggle: () => void;
+  projectTitle: string;
+  onTitleUpdate: (newTitle: string) => void;
 }
 
 const tools = [
@@ -48,9 +52,16 @@ export function TopToolbar({
   onRightPanelChange,
   annotationMode,
   onAnnotationModeToggle,
+  projectTitle,
+  onTitleUpdate,
 }: TopToolbarProps) {
-  const [videoTitle, setVideoTitle] = useState("Untitled Video");
+  const [videoTitle, setVideoTitle] = useState(projectTitle);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
+
+  // Update local state when prop changes
+  useEffect(() => {
+    setVideoTitle(projectTitle);
+  }, [projectTitle]);
 
   const handleToolClick = (toolId: string) => {
     if (toolId === "layout") {
@@ -86,9 +97,11 @@ export function TopToolbar({
     >
       {/* Left Section */}
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
+        <Link href="/">
+          <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+        </Link>
         <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
           <Menu className="h-4 w-4" />
         </Button>
@@ -105,9 +118,20 @@ export function TopToolbar({
             <Input
               value={videoTitle}
               onChange={(e) => setVideoTitle(e.target.value)}
-              onBlur={() => setIsEditingTitle(false)}
+              onBlur={() => {
+                setIsEditingTitle(false);
+                if (videoTitle.trim() && videoTitle !== projectTitle) {
+                  onTitleUpdate(videoTitle);
+                }
+              }}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
+                  setIsEditingTitle(false);
+                  if (videoTitle.trim() && videoTitle !== projectTitle) {
+                    onTitleUpdate(videoTitle);
+                  }
+                } else if (e.key === "Escape") {
+                  setVideoTitle(projectTitle);
                   setIsEditingTitle(false);
                 }
               }}
@@ -165,6 +189,10 @@ export function TopToolbar({
       {/* Right Section */}
       <div className="flex items-center gap-3">
         <Separator orientation="vertical" className="h-6" />
+        <Button variant="outline" size="sm" className="gap-2">
+          <Save className="h-4 w-4" />
+          Save
+        </Button>
         <Button variant="outline" size="sm" className="gap-2">
           <Eye className="h-4 w-4" />
           Preview

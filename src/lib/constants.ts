@@ -51,26 +51,28 @@ Your task is to write a complete YouTube script following this proven structure.
 
 ## OUTPUT FORMAT:
 
-You MUST return your response as a valid JSON array. Each element represents one slide with this exact structure:
+You MUST return your response as a valid JSON object with a "slides" array. Each element in the slides array represents one slide with this exact structure:
 
-[
-  {
-    "section": "HOOK",
-    "layout": "cover",
-    "narration": "The voiceover script for this slide",
-    "title": "Main title text",
-    "subtitle": "Optional subtitle",
-    "body": "Optional body text",
-    "bulletPoints": ["Optional", "bullet", "points"]
-  },
-  {
-    "section": "TRANSITION",
-    "layout": "titleBody",
-    "narration": "Transition script to rehook viewer",
-    "title": "Transition title",
-    "body": "Brief transition message"
-  }
-]
+{
+  "slides": [
+    {
+      "section": "HOOK",
+      "layout": "cover",
+      "narration": "The voiceover script for this slide",
+      "title": "Main title text",
+      "subtitle": "Optional subtitle",
+      "body": "Optional body text",
+      "bulletPoints": ["Optional", "bullet", "points"]
+    },
+    {
+      "section": "TRANSITION",
+      "layout": "titleBody",
+      "narration": "Transition script to rehook viewer",
+      "title": "Transition title",
+      "body": "Brief transition message"
+    }
+  ]
+}
 
 ## IMPORTANT RULES:
 
@@ -86,10 +88,10 @@ You MUST return your response as a valid JSON array. Each element represents one
 5. Keep narration natural and conversational
 6. Make titles punchy and engaging
 7. Users will add their own images later - focus on text content
-8. ALWAYS return valid JSON - no markdown code blocks, no additional text
+8. ALWAYS return valid JSON object with "slides" array - no markdown code blocks, no additional text, no other wrapper properties
 
 Remember: Write for retention. Every slide should build curiosity for the next one.
 
 Now write a script about: {topic}`;
 
-export const AI_GENERATION_SYSTEM_PROMPT = `You are a YouTube script generation AI. You must ALWAYS respond with valid JSON only - no explanations, no markdown code blocks, no additional text. Just a raw JSON array.`;
+export const AI_GENERATION_SYSTEM_PROMPT = `You are a YouTube script generation AI. You must ALWAYS respond with valid JSON only - no explanations, no markdown code blocks, no additional text. Return a JSON object with a "slides" property containing an array of slide objects. Example: {"slides": [{...}, {...}]}`;

@@ -14,7 +14,8 @@ import {
   ChevronDown,
   Volume2,
   Edit,
-  Sparkles
+  Sparkles,
+  Play
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -23,9 +24,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import { Scene, Theme, LayoutType } from "@/types";
+import { Scene, Theme, LayoutType, AnnotationElement, LayoutContent } from "@/types";
 import { parseScriptToLayout } from "@/lib/layouts";
 import { YOUTUBE_SCRIPT_PROMPT, AI_GENERATION_SYSTEM_PROMPT } from "@/lib/constants";
+import { generateYouTubeScript, generateSceneContent, generateSpeech } from "@/app/actions/openai";
+import { createScene, updateScene, deleteScene } from "@/app/actions/scenes";
+import { getProject } from "@/app/actions/projects";
+import { useTransition } from "react";
+import type { Prisma } from "@prisma/client";
 
 interface LeftSidebarProps {
   scenes: Scene[];
@@ -33,6 +39,7 @@ interface LeftSidebarProps {
   activeSceneId: string;
   setActiveSceneId: (id: string) => void;
   currentTheme: Theme;
+  projectId: string;
 }
 
 // OpenAI TTS Voices
@@ -51,144 +58,98 @@ export function LeftSidebar({
   activeSceneId,
   setActiveSceneId,
   currentTheme,
+  projectId,
 }: LeftSidebarProps) {
   const [editingSceneId, setEditingSceneId] = useState<string | null>(null);
   const [selectedVoice, setSelectedVoice] = useState(OPENAI_VOICES[0]);
   const [aiPromptSceneId, setAiPromptSceneId] = useState<string | null>(null);
   const [aiPrompt, setAiPrompt] = useState<string>("");
   const [isGeneratingAI, setIsGeneratingAI] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
   const [showTopicInput, setShowTopicInput] = useState(false);
   const [scriptTopic, setScriptTopic] = useState<string>("");
   const [isGeneratingScript, setIsGeneratingScript] = useState(false);
+  const [isGeneratingAudio, setIsGeneratingAudio] = useState<string | null>(null);
+  const [playingAudio, setPlayingAudio] = useState<string | null>(null);
+  const [audioElements, setAudioElements] = useState<Map<string, HTMLAudioElement>>(new Map());
 
   const addScene = () => {
-    const content = "Type your script or use '/' for commands";
-    const newScene: Scene = {
-      id: Date.now().toString(),
-      content,
-      duration: 5,
-      layout: "titleBody",
-      layoutContent: parseScriptToLayout(content, "titleBody"),
-      annotations: [],
-    };
-    setScenes([...scenes, newScene]);
-    setActiveSceneId(newScene.id);
-    setEditingSceneId(newScene.id);
+    if (!projectId) return;
+
+    const content = "Add content here";
+    const layoutContent = parseScriptToLayout(content, "titleBody");
+
+    startTransition(async () => {
+      try {
+        // Create scene in database
+        const newScene = await createScene(projectId, {
+          content,
+          layout: "titleBody",
+          layoutContent: layoutContent as Prisma.InputJsonValue,
+          duration: 5,
+        });
+
+        // Convert to Scene type and add to local state
+        const sceneForState: Scene = {
+          id: newScene.id,
+          content: newScene.content,
+          duration: newScene.duration,
+          layout: newScene.layout as LayoutType,
+          layoutContent: newScene.layoutContent as LayoutContent,
+          annotations: (newScene.annotations as unknown as AnnotationElement[]) || [],
+          themeOverride: (newScene.themeOverride as unknown) as Partial<Theme> | undefined,
+        };
+
+        setScenes([...scenes, sceneForState]);
+        setActiveSceneId(newScene.id);
+        setEditingSceneId(newScene.id);
+      } catch (error) {
+        console.error("Failed to create scene:", error);
+        alert("Failed to create scene. Please try again.");
+      }
+    });
   };
 
   const generateScriptWithAI = async () => {
-    if (!scriptTopic.trim()) return;
+    if (!scriptTopic.trim() || !projectId) return;
 
     setIsGeneratingScript(true);
 
     try {
-      // TODO: Replace with actual API call to OpenAI or Claude
-      // For now, simulating with mock data
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      // Delete all existing scenes first
+      for (const scene of scenes) {
+        await deleteScene(scene.id);
+      }
 
-      // Mock AI response - this would come from the API
-      const mockScriptSlides = [
-        {
-          section: "HOOK",
-          layout: "cover" as LayoutType,
-          narration: `You know that feeling when ${scriptTopic} seems impossible? What if I told you there's a better way?`,
-          title: `The ${scriptTopic} Revolution`,
-          subtitle: "Everything is about to change",
-        },
-        {
-          section: "TRANSITION",
-          layout: "titleBody" as LayoutType,
-          narration: "So what does this actually mean for you? Let me break it down.",
-          title: "Here's Why This Matters",
-          body: "This isn't just theory - it's a proven approach that works.",
-        },
-        {
-          section: "SETUP",
-          layout: "titleBody" as LayoutType,
-          narration: `By the end of this, you'll understand exactly how to master ${scriptTopic}. Whether you're a beginner or experienced, this approach will transform your results.`,
-          title: "What You'll Learn Today",
-          body: `A complete system for ${scriptTopic} that delivers real results.`,
-        },
-        {
-          section: "PROBLEM",
-          layout: "imageBullets" as LayoutType,
-          narration: `Most people struggle with ${scriptTopic} because they're using outdated methods. That stops today.`,
-          title: "The Problem Most People Face",
-          bulletPoints: [
-            "Overwhelming complexity",
-            "Too many conflicting approaches",
-            "No clear path to success"
-          ],
-        },
-        {
-          section: "TRANSITION",
-          layout: "titleBody" as LayoutType,
-          narration: "But here's the catch - you need the right framework.",
-          title: "The Missing Piece",
-          body: "Let's fix that right now.",
-        },
-        {
-          section: "SOLUTION",
-          layout: "imageBullets" as LayoutType,
-          narration: `Here's your step-by-step system for ${scriptTopic}. Follow these steps and watch what happens.`,
-          title: "Your Action Plan",
-          bulletPoints: [
-            "Start with the fundamentals",
-            "Build momentum systematically",
-            "Scale with confidence"
-          ],
-        },
-        {
-          section: "RESULT",
-          layout: "titleBody" as LayoutType,
-          narration: `Once you implement this, ${scriptTopic} becomes effortless. You'll wonder why you struggled before.`,
-          title: "The Transformation",
-          body: "From overwhelmed to unstoppable - that's the difference this makes.",
-        },
-        {
-          section: "TRANSITION",
-          layout: "titleBody" as LayoutType,
-          narration: "Now that you've seen it, here's your next move.",
-          title: "Ready to Take Action?",
-          body: "Your journey starts now.",
-        },
-        {
-          section: "NEXT",
-          layout: "imageBullets" as LayoutType,
-          narration: `Try this today: Start with step one. Don't overthink it - just begin. Want help? I'll show you exactly how in the next video.`,
-          title: "What's Next",
-          bulletPoints: [
-            "Take action on step one today",
-            "Track your progress",
-            "Watch the next video for advanced strategies"
-          ],
-        },
-      ];
+      // Call OpenAI to generate YouTube script
+      await generateYouTubeScript(scriptTopic, projectId);
 
-      // Convert to Scene objects
-      const newScenes: Scene[] = mockScriptSlides.map((slide, index) => ({
-        id: `${Date.now()}-${index}`,
-        content: slide.narration,
-        duration: 5,
-        layout: slide.layout,
-        layoutContent: {
-          title: slide.title || slide.title,
-          subtitle: slide.subtitle,
-          body: slide.body,
-          bulletPoints: slide.bulletPoints,
-        },
-        annotations: [],
-      }));
+      // Reload project to get the new scenes
+      const project = await getProject(projectId);
 
-      setScenes(newScenes);
-      if (newScenes.length > 0) {
-        setActiveSceneId(newScenes[0].id);
+      if (project) {
+        // Convert Prisma scenes to Scene type
+        const convertedScenes: Scene[] = project.scenes.map((s) => ({
+          id: s.id,
+          content: s.content,
+          duration: s.duration,
+          layout: s.layout as LayoutType,
+          layoutContent: s.layoutContent as LayoutContent,
+          annotations: (s.annotations || []) as AnnotationElement[],
+          themeOverride: (s.themeOverride as unknown) as Partial<Theme> | undefined,
+        }));
+
+        setScenes(convertedScenes);
+        if (convertedScenes.length > 0) {
+          setActiveSceneId(convertedScenes[0].id);
+        }
       }
 
       setShowTopicInput(false);
       setScriptTopic("");
     } catch (error) {
       console.error("Error generating script:", error);
+      alert("Failed to generate script. Please try again.");
     } finally {
       setIsGeneratingScript(false);
     }
@@ -199,25 +160,51 @@ export function LeftSidebar({
   };
 
   const updateSceneContent = (sceneId: string, content: string) => {
+    const scene = scenes.find(s => s.id === sceneId);
+    if (!scene) return;
+
+    const newLayoutContent = parseScriptToLayout(content, scene.layout, scene.layoutContent);
+
     setScenes(
       scenes.map(s =>
         s.id === sceneId
           ? {
               ...s,
               content,
-              layoutContent: parseScriptToLayout(content, s.layout, s.layoutContent),
+              layoutContent: newLayoutContent,
             }
           : s
       )
     );
+
+    // Save to database
+    startTransition(async () => {
+      try {
+        await updateScene(sceneId, {
+          content,
+          layoutContent: newLayoutContent as Prisma.InputJsonValue,
+        });
+      } catch (error) {
+        console.error("Failed to update scene content:", error);
+      }
+    });
   };
 
-  const deleteScene = (sceneId: string) => {
+  const handleDeleteScene = (sceneId: string) => {
     const newScenes = scenes.filter(s => s.id !== sceneId);
     setScenes(newScenes);
     if (activeSceneId === sceneId && newScenes.length > 0) {
       setActiveSceneId(newScenes[0].id);
     }
+
+    // Delete from database
+    startTransition(async () => {
+      try {
+        await deleteScene(sceneId);
+      } catch (error) {
+        console.error("Failed to delete scene:", error);
+      }
+    });
   };
 
   const handleAiPromptToggle = (sceneId: string) => {
@@ -238,38 +225,97 @@ export function LeftSidebar({
 
     setIsGeneratingAI(sceneId);
 
-    // Simulate AI generation - TODO: Replace with actual API call
-    setTimeout(() => {
-      // Simulated AI response with structured data
-      const aiResponse = {
-        narration: `Here's an engaging overview of ${aiPrompt}. This slide captures the key insights.`,
-        title: aiPrompt.split(' ').slice(0, 5).join(' '),
-        body: `Discover how ${aiPrompt} can transform your workflow and deliver exceptional results.`
-      };
+    startTransition(async () => {
+      try {
+        const result = await generateSceneContent(aiPrompt, sceneId);
 
-      const scene = scenes.find(s => s.id === sceneId);
-      if (scene) {
+        // Update local state
         setScenes((prev: Scene[]) =>
           prev.map(s =>
             s.id === sceneId
               ? {
                   ...s,
-                  content: aiResponse.narration,
+                  content: result.narration,
                   layoutContent: {
                     ...s.layoutContent,
-                    title: aiResponse.title,
-                    body: aiResponse.body,
+                    title: result.title,
+                    body: result.body,
                   },
                 }
               : s
           )
         );
-      }
 
-      setIsGeneratingAI(null);
-      setAiPromptSceneId(null);
-      setAiPrompt("");
-    }, 2000);
+        setAiPromptSceneId(null);
+        setAiPrompt("");
+      } catch (error) {
+        console.error("Failed to generate scene content:", error);
+        alert("Failed to generate content. Please try again.");
+      } finally {
+        setIsGeneratingAI(null);
+      }
+    });
+  };
+
+  const generateAudioForScene = async (sceneId: string) => {
+    const scene = scenes.find(s => s.id === sceneId);
+    if (!scene || !scene.content.trim()) {
+      alert("Please add content to the scene before generating audio.");
+      return;
+    }
+
+    setIsGeneratingAudio(sceneId);
+
+    startTransition(async () => {
+      try {
+        const result = await generateSpeech(scene.content, selectedVoice.id, sceneId);
+
+        // Update local state with audio URL
+        setScenes((prev: Scene[]) =>
+          prev.map(s =>
+            s.id === sceneId
+              ? { ...s, audioUrl: result.url }
+              : s
+          )
+        );
+      } catch (error) {
+        console.error("Failed to generate audio:", error);
+        alert("Failed to generate audio. Please try again.");
+      } finally {
+        setIsGeneratingAudio(null);
+      }
+    });
+  };
+
+  const playAudio = (sceneId: string, audioUrl: string) => {
+    // Stop any currently playing audio
+    if (playingAudio) {
+      const currentAudio = audioElements.get(playingAudio);
+      if (currentAudio) {
+        currentAudio.pause();
+        currentAudio.currentTime = 0;
+      }
+    }
+
+    // If clicking the same audio that's playing, just stop it
+    if (playingAudio === sceneId) {
+      setPlayingAudio(null);
+      return;
+    }
+
+    // Create or get audio element
+    let audio = audioElements.get(sceneId);
+    if (!audio) {
+      audio = new Audio(audioUrl);
+      audio.onended = () => setPlayingAudio(null);
+      const newMap = new Map(audioElements);
+      newMap.set(sceneId, audio);
+      setAudioElements(newMap);
+    }
+
+    // Play the audio
+    audio.play();
+    setPlayingAudio(sceneId);
   };
 
   return (
@@ -368,9 +414,9 @@ export function LeftSidebar({
       </div>
 
       {/* Scenes List */}
-      <ScrollArea className="flex-1">
-        <div className="p-4">
-        <div className="space-y-3">
+      <div className="flex-1 overflow-hidden">
+        <ScrollArea className="h-full">
+          <div className="p-4 space-y-3">
           {scenes.map((scene, index) => (
             <motion.div
               key={scene.id}
@@ -459,6 +505,37 @@ export function LeftSidebar({
                     <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
                       <span>{scene.duration}s</span>
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {scene.audioUrl && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className={`h-6 w-6 ${playingAudio === scene.id ? 'text-primary' : 'text-green-500'}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              playAudio(scene.id, scene.audioUrl!);
+                            }}
+                            title={playingAudio === scene.id ? "Stop audio" : "Play audio"}
+                          >
+                            <Play className="h-3 w-3" />
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className={`h-6 w-6 ${scene.audioUrl ? 'text-green-500' : ''}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            generateAudioForScene(scene.id);
+                          }}
+                          disabled={isGeneratingAudio === scene.id}
+                          title={scene.audioUrl ? "Regenerate audio" : "Generate audio"}
+                        >
+                          {isGeneratingAudio === scene.id ? (
+                            <div className="h-3 w-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <Volume2 className="h-3 w-3" />
+                          )}
+                        </Button>
                         <Button
                           variant="ghost"
                           size="icon"
@@ -489,7 +566,7 @@ export function LeftSidebar({
                             className="h-6 w-6 text-destructive hover:text-destructive"
                             onClick={(e) => {
                               e.stopPropagation();
-                              deleteScene(scene.id);
+                              handleDeleteScene(scene.id);
                             }}
                           >
                             <Trash2 className="h-3 w-3" />
@@ -502,9 +579,9 @@ export function LeftSidebar({
               </Card>
             </motion.div>
           ))}
-        </div>
-        </div>
-      </ScrollArea>
+          </div>
+        </ScrollArea>
+      </div>
     </div>
   );
 }

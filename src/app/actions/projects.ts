@@ -24,12 +24,12 @@ export async function createProject(title: string = "Untitled Video"): Promise<V
       scenes: {
         create: {
           order: 0,
-          content: "Welcome to our presentation! Today we'll explore the amazing world of AI-generated content.",
+          content: "Welcome to your new video! Click 'AI Generate' to create a script or add slides manually.",
           duration: 5,
           layout: "cover",
           layoutContent: {
-            title: "Welcome to our presentation!",
-            subtitle: "Today we'll explore the amazing world of AI-generated content.",
+            title: "Welcome!",
+            subtitle: "Click 'AI Generate' to create a script or add slides manually.",
           },
           annotations: [],
         },
@@ -63,10 +63,15 @@ export async function getProject(projectId: string): Promise<VideoProjectWithSce
 /**
  * Get all video projects
  */
-export async function getProjects(): Promise<VideoProject[]> {
+export async function getProjects(): Promise<VideoProjectWithScenes[]> {
   return await prisma.videoProject.findMany({
     orderBy: { updatedAt: "desc" },
-  });
+    include: {
+      scenes: {
+        orderBy: { order: "asc" },
+      },
+    },
+  }) as VideoProjectWithScenes[];
 }
 
 /**
