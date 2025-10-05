@@ -2,6 +2,9 @@ import "server-only";
 
 import { NextRequest, NextResponse } from "next/server";
 import type { Scene, Theme } from "@/types";
+import { getRemotionBundle } from "@/lib/remotionBundle";
+import path from "path";
+import { mkdir } from "fs/promises";
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,10 +20,7 @@ export async function POST(request: NextRequest) {
     console.log("Starting video export...");
 
     // Dynamically import server-only packages
-    const { bundle } = await import("@remotion/bundler");
     const { renderMedia, getCompositions } = await import("@remotion/renderer");
-    const { mkdir } = await import("fs/promises");
-    const path = await import("path");
 
     // Calculate total duration in frames
     const FPS = 30;
@@ -36,17 +36,14 @@ export async function POST(request: NextRequest) {
 
     console.log("Output path:", outputPath);
 
-    // 2. Bundle Remotion composition
-    console.log("Bundling Remotion composition...");
-    const bundled = await bundle({
-      entryPoint: path.join(process.cwd(), "src/remotion/index.ts"),
-      webpackOverride: (config) => config,
-    });
+    // 2. Get or create bundle (cached)
+    console.log("Getting Remotion bundle...");
+    const bundleLocation = await getRemotionBundle();
 
-    console.log("Bundled at:", bundled);
+    console.log("Bundle location:", bundleLocation);
 
     // 3. Get all compositions
-    const compositions = await getCompositions(bundled, {
+    const compositions = await getCompositions(bundleLocation, {
       inputProps: {
         scenes,
         theme,
@@ -82,7 +79,7 @@ export async function POST(request: NextRequest) {
         ...composition,
         durationInFrames: totalDurationInFrames,
       },
-      serveUrl: bundled,
+      serveUrl: bundleLocation,
       codec: "h264",
       outputLocation: outputPath,
       inputProps: {

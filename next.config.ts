@@ -5,7 +5,9 @@ const nextConfig: NextConfig = {
     serverActions: {
       bodySizeLimit: '10mb',
     },
+    serverComponentsExternalPackages: ['@remotion/renderer', '@remotion/bundler'],
   },
+  serverExternalPackages: ['@remotion/renderer', '@remotion/bundler'],
   webpack: (config, { isServer }) => {
     // Exclude Remotion server-side packages from client bundle
     if (!isServer) {
@@ -15,16 +17,6 @@ const nextConfig: NextConfig = {
         path: false,
         os: false,
       };
-    }
-
-    // Don't bundle these server-only packages in client
-    config.externals = config.externals || [];
-    if (!isServer) {
-      config.externals.push({
-        '@remotion/bundler': '@remotion/bundler',
-        '@remotion/renderer': '@remotion/renderer',
-        esbuild: 'esbuild',
-      });
     }
 
     return config;
