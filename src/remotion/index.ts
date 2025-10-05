@@ -1,5 +1,6 @@
-import { Composition } from 'remotion';
+import { Composition, registerRoot } from 'remotion';
 import { VideoComposition } from './VideoComposition';
+import React from 'react';
 
 export const RemotionRoot: React.FC = () => {
   return (
@@ -46,3 +47,5 @@ export const RemotionRoot: React.FC = () => {
     </>
   );
 };
+
+registerRoot(RemotionRoot);

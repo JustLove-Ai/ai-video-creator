@@ -13,6 +13,7 @@ import { ImageUploadPanel } from "./panels/ImageUploadPanel";
 import { ChartsPanel } from "./panels/ChartsPanel";
 import { VideoPreviewPanel } from "./panels/VideoPreviewPanel";
 import { VideoSettingsPanel } from "./panels/VideoSettingsPanel";
+import { ExportProgressModal } from "./panels/ExportProgressModal";
 import { Scene, RightPanelType, Theme, LayoutType, ChartData } from "@/types";
 import { themePresets, mergeTheme } from "@/lib/themes";
 import { parseScriptToLayout, preserveContentOnLayoutChange } from "@/lib/layouts";
@@ -53,6 +54,9 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
   const [showVideoPreview, setShowVideoPreview] = useState(false);
   const [selectedVoice, setSelectedVoice] = useState('alloy');
   const [isExporting, setIsExporting] = useState(false);
+  const [exportStatus, setExportStatus] = useState<"bundling" | "rendering" | "success" | "error" | null>(null);
+  const [exportError, setExportError] = useState<string>("");
+  const [exportVideoUrl, setExportVideoUrl] = useState<string>("");
 
   // Video and Audio Settings
   const [videoSettings, setVideoSettings] = useState<VideoSettings>({
@@ -474,30 +478,20 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
               onExport={async (newVideoSettings, newAudioSettings) => {
                 try {
                   setIsExporting(true);
+                  setExportStatus("bundling");
+                  setExportError("");
 
                   // Store settings in state
                   setVideoSettings(newVideoSettings);
                   setAudioSettings(newAudioSettings);
 
-                  // Save settings to database
-                  if (project) {
-                    startTransition(async () => {
-                      try {
-                        await updateProject(project.id, {
-                          videoSettings: newVideoSettings as Prisma.InputJsonValue,
-                          audioSettings: newAudioSettings as Prisma.InputJsonValue,
-                        });
-                        console.log("Settings saved to database");
-                      } catch (error) {
-                        console.error("Failed to save settings:", error);
-                      }
-                    });
-                  }
-
                   // Close the settings panel
                   setRightPanel(null);
 
-                  toast.info("Exporting video... This may take a few minutes.");
+                  // Show bundling status
+                  setTimeout(() => {
+                    setExportStatus("rendering");
+                  }, 2000);
 
                   const response = await fetch("/api/export-video", {
                     method: "POST",
@@ -513,22 +507,17 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
                   const data = await response.json();
 
                   if (response.ok && data.success && data.videoUrl) {
-                    toast.success("Video exported successfully!");
+                    setExportStatus("success");
+                    setExportVideoUrl(data.videoUrl);
                     console.log("Export response:", data);
-
-                    // Download the video
-                    const link = document.createElement('a');
-                    link.href = data.videoUrl;
-                    link.download = `video-${Date.now()}.mp4`;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
                   } else {
-                    toast.error(data.error || "Failed to export video");
+                    setExportStatus("error");
+                    setExportError(data.error || "Failed to export video");
                   }
                 } catch (error) {
                   console.error("Export error:", error);
-                  toast.error("Failed to export video");
+                  setExportStatus("error");
+                  setExportError(error instanceof Error ? error.message : "Failed to export video");
                 } finally {
                   setIsExporting(false);
                 }
@@ -574,6 +563,28 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
             // Update local state with prepared scenes (includes audio URLs)
             setScenes(updatedScenes);
           }}
+        />
+      )}
+
+      {/* Export Progress Modal */}
+      {exportStatus && (
+        <ExportProgressModal
+          status={exportStatus}
+          error={exportError}
+          onClose={() => {
+            setExportStatus(null);
+            setExportError("");
+            setExportVideoUrl("");
+          }}
+          onDownload={exportStatus === "success" && exportVideoUrl ? () => {
+            const link = document.createElement('a');
+            link.href = exportVideoUrl;
+            link.download = `video-${Date.now()}.mp4`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            setExportStatus(null);
+          } : undefined}
         />
       )}
     </div>
