@@ -19,7 +19,8 @@
       "Bash(curl:*)",
       "Bash(npx shadcn@latest add:*)",
       "Bash(clear)",
-      "Bash(npx prisma:*)"
+      "Bash(npx prisma:*)",
+      "Bash(git mv:*)"
     ],
     "deny": [],
     "ask": []

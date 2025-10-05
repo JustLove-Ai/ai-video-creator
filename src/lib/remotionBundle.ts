@@ -20,7 +20,7 @@ export async function getRemotionBundle(): Promise<string> {
   const { bundle } = await import("@remotion/bundler");
 
   const bundleLocation = await bundle({
-    entryPoint: path.join(process.cwd(), "src/remotion/index.ts"),
+    entryPoint: path.join(process.cwd(), "src/remotion/index.tsx"),
     // Enable caching for faster subsequent bundles
     enableCaching: true,
     webpackOverride: (config) => config,
