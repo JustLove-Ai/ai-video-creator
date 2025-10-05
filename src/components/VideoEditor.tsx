@@ -52,6 +52,7 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
   const [isPending, startTransition] = useTransition();
   const [showVideoPreview, setShowVideoPreview] = useState(false);
   const [selectedVoice, setSelectedVoice] = useState('alloy');
+  const [isExporting, setIsExporting] = useState(false);
 
   // Video and Audio Settings
   const [videoSettings, setVideoSettings] = useState<VideoSettings>({
@@ -469,8 +470,11 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
           {rightPanel === "videoSettings" && (
             <VideoSettingsPanel
               onClose={() => setRightPanel(null)}
+              isExporting={isExporting}
               onExport={async (newVideoSettings, newAudioSettings) => {
                 try {
+                  setIsExporting(true);
+
                   // Store settings in state
                   setVideoSettings(newVideoSettings);
                   setAudioSettings(newAudioSettings);
@@ -493,7 +497,7 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
                   // Close the settings panel
                   setRightPanel(null);
 
-                  toast.info("Preparing video export...");
+                  toast.info("Exporting video... This may take a few minutes.");
 
                   const response = await fetch("/api/export-video", {
                     method: "POST",
@@ -525,6 +529,8 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
                 } catch (error) {
                   console.error("Export error:", error);
                   toast.error("Failed to export video");
+                } finally {
+                  setIsExporting(false);
                 }
               }}
               onPreview={(newVideoSettings, newAudioSettings) => {

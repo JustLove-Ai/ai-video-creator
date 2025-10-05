@@ -7,7 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { X, Video, Mic, Play, Eye, Volume2 } from "lucide-react";
+import { X, Video, Mic, Play, Eye, Volume2, Download, Loader2 } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -47,9 +47,10 @@ interface VideoSettingsPanelProps {
   onExport: (videoSettings: VideoSettings, audioSettings: AudioSettings) => void;
   onPreview: (videoSettings: VideoSettings, audioSettings: AudioSettings) => void;
   initialVoice?: string;
+  isExporting?: boolean;
 }
 
-export function VideoSettingsPanel({ onClose, onExport, onPreview, initialVoice = "alloy" }: VideoSettingsPanelProps) {
+export function VideoSettingsPanel({ onClose, onExport, onPreview, initialVoice = "alloy", isExporting = false }: VideoSettingsPanelProps) {
   const [activeTab, setActiveTab] = useState<"captions" | "transitions" | "audio">("captions");
   const [isPlayingVoiceSample, setIsPlayingVoiceSample] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -508,9 +509,19 @@ export function VideoSettingsPanel({ onClose, onExport, onPreview, initialVoice 
           className="w-full text-white hover:opacity-90 gap-2"
           style={{ backgroundColor: '#ff7900' }}
           onClick={handleExport}
+          disabled={isExporting}
         >
-          <Video className="h-4 w-4" />
-          Export Video
+          {isExporting ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Exporting...
+            </>
+          ) : (
+            <>
+              <Download className="h-4 w-4" />
+              Export Video
+            </>
+          )}
         </Button>
       </div>
     </motion.div>
