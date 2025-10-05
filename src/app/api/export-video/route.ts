@@ -1,11 +1,7 @@
+import "server-only";
+
 import { NextRequest, NextResponse } from "next/server";
-import { bundle } from "@remotion/bundler";
-import { renderMedia, selectComposition } from "@remotion/renderer";
-import { mkdir, readFile } from "fs/promises";
-import path from "path";
-import os from "os";
-import { Scene, Theme } from "@/types";
-import { getCompositions } from "@remotion/renderer";
+import type { Scene, Theme } from "@/types";
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,6 +15,12 @@ export async function POST(request: NextRequest) {
     }
 
     console.log("Starting video export...");
+
+    // Dynamically import server-only packages
+    const { bundle } = await import("@remotion/bundler");
+    const { renderMedia, getCompositions } = await import("@remotion/renderer");
+    const { mkdir } = await import("fs/promises");
+    const path = await import("path");
 
     // Calculate total duration in frames
     const FPS = 30;
