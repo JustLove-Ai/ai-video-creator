@@ -20,17 +20,18 @@ export async function POST(request: NextRequest) {
     console.log("Starting video export...");
     console.log("Number of scenes:", scenes.length);
 
-    // Check if images need to be converted from data URLs
+    // Check if images and audio need to be converted from data URLs
     const preparedScenes = scenes.map((scene: Scene) => {
       const layoutContent = scene.layoutContent as any;
+      let updatedScene = { ...scene };
 
       // If image is a data URL, we have a problem - should be converted first
       if (layoutContent?.imageUrl) {
         if (layoutContent.imageUrl.startsWith('data:')) {
           console.error("Scene has data URL image, needs conversion:", scene.id);
           // For now, remove the image to prevent error
-          return {
-            ...scene,
+          updatedScene = {
+            ...updatedScene,
             layoutContent: {
               ...layoutContent,
               imageUrl: undefined,
@@ -39,7 +40,23 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      return scene;
+      // Check audio - if it's a data URL or missing, log it
+      if (scene.audioUrl) {
+        if (scene.audioUrl.startsWith('data:')) {
+          console.error("Scene has data URL audio, needs conversion:", scene.id);
+          // Remove data URL audio
+          updatedScene = {
+            ...updatedScene,
+            audioUrl: undefined,
+          };
+        } else {
+          console.log("Scene has audio file:", scene.id, scene.audioUrl);
+        }
+      } else {
+        console.log("Scene missing audio:", scene.id);
+      }
+
+      return updatedScene;
     });
 
     // Dynamically import server-only packages

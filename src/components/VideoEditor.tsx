@@ -488,16 +488,26 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
                   // Close the settings panel
                   setRightPanel(null);
 
-                  // Show bundling status
-                  setTimeout(() => {
-                    setExportStatus("rendering");
-                  }, 2000);
+                  // First, prepare all assets (convert data URLs to files)
+                  const { prepareVideoAssets } = await import("@/lib/assetPreparation");
+
+                  let preparedScenes = scenes;
+                  try {
+                    preparedScenes = await prepareVideoAssets(scenes, (progress) => {
+                      console.log("Asset preparation progress:", progress);
+                    }, newAudioSettings.voice);
+                  } catch (error) {
+                    console.error("Failed to prepare assets:", error);
+                  }
+
+                  // Show rendering status
+                  setExportStatus("rendering");
 
                   const response = await fetch("/api/export-video", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                      scenes,
+                      scenes: preparedScenes,
                       theme: activeTheme,
                       videoSettings: newVideoSettings,
                       audioSettings: newAudioSettings,
