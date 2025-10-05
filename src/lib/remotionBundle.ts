@@ -23,7 +23,19 @@ export async function getRemotionBundle(): Promise<string> {
     entryPoint: path.join(process.cwd(), "src/remotion/index.tsx"),
     // Enable caching for faster subsequent bundles
     enableCaching: true,
-    webpackOverride: (config) => config,
+    webpackOverride: (config) => {
+      // Add path alias resolution for @/* -> src/*
+      return {
+        ...config,
+        resolve: {
+          ...config.resolve,
+          alias: {
+            ...(config.resolve?.alias ?? {}),
+            '@': path.resolve(process.cwd(), 'src'),
+          },
+        },
+      };
+    },
   });
 
   cachedBundleUrl = bundleLocation;
