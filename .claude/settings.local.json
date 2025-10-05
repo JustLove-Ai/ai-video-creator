@@ -20,7 +20,8 @@
       "Bash(npx shadcn@latest add:*)",
       "Bash(clear)",
       "Bash(npx prisma:*)",
-      "Bash(git mv:*)"
+      "Bash(git mv:*)",
+      "Bash(base64,...\"\n- Images must be actual file paths or public URLs\n\n**Current Behavior**\n- Data URL images are removed from scenes before export\n- Export proceeds without images (temporary)\n- Console logs identify which scenes had data URLs\n\n**Proper Solution (TODO)**\n- Users should use \"Preview\" before \"Export\"\n- Preview calls prepareVideoAssets() which converts data URLs to files\n- Export should only be called with already-prepared scenes\n- OR: Export should call prepareVideoAssets() first\n\n**Files Changed**\n- src/app/api/export-video/route.ts: Added preparedScenes mapping\n- Uses preparedScenes in getCompositions and renderMedia\n\nThis allows export to work, but without images that haven''t been converted to files yet.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
     ],
     "deny": [],
     "ask": []

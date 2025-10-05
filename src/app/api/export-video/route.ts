@@ -18,13 +18,36 @@ export async function POST(request: NextRequest) {
     }
 
     console.log("Starting video export...");
+    console.log("Number of scenes:", scenes.length);
+
+    // Check if images need to be converted from data URLs
+    const preparedScenes = scenes.map((scene: Scene) => {
+      const layoutContent = scene.layoutContent as any;
+
+      // If image is a data URL, we have a problem - should be converted first
+      if (layoutContent?.imageUrl) {
+        if (layoutContent.imageUrl.startsWith('data:')) {
+          console.error("Scene has data URL image, needs conversion:", scene.id);
+          // For now, remove the image to prevent error
+          return {
+            ...scene,
+            layoutContent: {
+              ...layoutContent,
+              imageUrl: undefined,
+            },
+          };
+        }
+      }
+
+      return scene;
+    });
 
     // Dynamically import server-only packages
     const { renderMedia, getCompositions } = await import("@remotion/renderer");
 
     // Calculate total duration in frames
     const FPS = 30;
-    const totalDurationInFrames = scenes.reduce((total: number, scene: Scene) => {
+    const totalDurationInFrames = preparedScenes.reduce((total: number, scene: Scene) => {
       return total + Math.round(scene.duration * FPS);
     }, 0);
 
@@ -45,7 +68,7 @@ export async function POST(request: NextRequest) {
     // 3. Get all compositions
     const compositions = await getCompositions(bundleLocation, {
       inputProps: {
-        scenes,
+        scenes: preparedScenes,
         theme,
         fps: FPS,
         videoSettings: videoSettings || {
@@ -83,7 +106,7 @@ export async function POST(request: NextRequest) {
       codec: "h264",
       outputLocation: outputPath,
       inputProps: {
-        scenes,
+        scenes: preparedScenes,
         theme,
         fps: FPS,
         videoSettings: videoSettings || {
