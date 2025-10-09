@@ -43,7 +43,8 @@ model Scene {
   // Media
   imageUrl        String?  // Generated or uploaded image URL
   imagePrompt     String?  // Prompt used to generate image
-  audioUrl        String?  // Generated TTS audio URL
+  audioUrl        String?  // AI-generated TTS audio URL
+  recordedAudioUrl String? // User-recorded audio URL (takes priority)
   voiceId         String?  // OpenAI voice ID (alloy, echo, fable, onyx, nova, shimmer)
 
   // Annotations

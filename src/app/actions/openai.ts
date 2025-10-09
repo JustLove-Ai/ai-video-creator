@@ -13,17 +13,22 @@ export async function generateImage(prompt: string, sceneId?: string): Promise<{
   b64_json?: string;
 }> {
   try {
-    const baseUrl = typeof window === 'undefined'
-      ? process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3005'
-      : '';
-    const response = await fetch(`${baseUrl}/api/images`, {
+    // Server-side: construct URL from env or use relative path via localhost
+    // The actual port is auto-detected by Next.js
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ||
+                    process.env.NEXTAUTH_URL ||
+                    `http://localhost:${process.env.PORT || '3000'}`;
+    const apiUrl = typeof window === 'undefined' ? `${baseUrl}/api/images` : '/api/images';
+
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ prompt }),
     });
 
     if (!response.ok) {
-      throw new Error('Failed to generate image');
+      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+      throw new Error(errorData.error || 'Failed to generate image');
     }
 
     const data = await response.json();
@@ -63,17 +68,21 @@ export async function generateSpeech(
   b64_json: string;
 }> {
   try {
-    const baseUrl = typeof window === 'undefined'
-      ? process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3005'
-      : '';
-    const response = await fetch(`${baseUrl}/api/voices`, {
+    // Server-side: construct URL from env or use relative path via localhost
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ||
+                    process.env.NEXTAUTH_URL ||
+                    `http://localhost:${process.env.PORT || '3000'}`;
+    const apiUrl = typeof window === 'undefined' ? `${baseUrl}/api/voices` : '/api/voices';
+
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text, voice }),
     });
 
     if (!response.ok) {
-      throw new Error('Failed to generate speech');
+      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+      throw new Error(errorData.error || 'Failed to generate speech');
     }
 
     const data = await response.json();
@@ -118,18 +127,24 @@ export async function generateSpeech(
  */
 export async function generateYouTubeScript(topic: string, projectId: string): Promise<unknown[]> {
   try {
-    const baseUrl = typeof window === 'undefined'
-      ? process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3005'
-      : '';
+    // Server-side: construct URL from env or use relative path via localhost
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ||
+                    process.env.NEXTAUTH_URL ||
+                    `http://localhost:${process.env.PORT || '3000'}`;
+    const apiUrl = typeof window === 'undefined' ? `${baseUrl}/api/generate-script` : '/api/generate-script';
 
-    const response = await fetch(`${baseUrl}/api/generate-script`, {
+    console.log('Fetching script from:', apiUrl);
+
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ topic }),
     });
 
     if (!response.ok) {
-      throw new Error('Failed to generate script');
+      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+      console.error('Script generation failed:', errorData);
+      throw new Error(errorData.error || 'Failed to generate script');
     }
 
     const data = await response.json();
@@ -155,6 +170,7 @@ export async function generateYouTubeScript(topic: string, projectId: string): P
     revalidatePath("/");
     return scenes;
   } catch (error) {
+    console.error("Error in generateYouTubeScript:", error);
     throw new Error(error instanceof Error ? error.message : "Failed to generate script");
   }
 }

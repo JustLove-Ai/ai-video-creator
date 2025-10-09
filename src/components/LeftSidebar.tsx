@@ -28,9 +28,10 @@ import { Scene, Theme, LayoutType, AnnotationElement, LayoutContent } from "@/ty
 import { parseScriptToLayout } from "@/lib/layouts";
 import { YOUTUBE_SCRIPT_PROMPT, AI_GENERATION_SYSTEM_PROMPT } from "@/lib/constants";
 import { generateYouTubeScript, generateSceneContent, generateSpeech } from "@/app/actions/openai";
-import { createScene, updateScene, deleteScene } from "@/app/actions/scenes";
+import { createScene, updateScene, deleteScene, deleteAllScenes } from "@/app/actions/scenes";
 import { getProject } from "@/app/actions/projects";
 import { getAudioDuration } from "@/lib/audioUtils";
+import { VoiceRecorder } from "@/components/VoiceRecorder";
 import { useTransition } from "react";
 import type { Prisma } from "@prisma/client";
 
@@ -127,9 +128,10 @@ export function LeftSidebar({
     setIsGeneratingScript(true);
 
     try {
-      // Delete all existing scenes first
-      for (const scene of scenes) {
-        await deleteScene(scene.id);
+      // Delete existing scenes only if there are any
+      // This handles both the welcome scene and any user-created scenes
+      if (scenes.length > 0) {
+        await deleteAllScenes(projectId);
       }
 
       // Call OpenAI to generate YouTube script
@@ -339,6 +341,51 @@ export function LeftSidebar({
     setPlayingAudio(sceneId);
   };
 
+  const handleRecordingComplete = async (sceneId: string, audioUrl: string, duration: number) => {
+    // Update local state
+    setScenes((prev: Scene[]) =>
+      prev.map(s =>
+        s.id === sceneId
+          ? { ...s, recordedAudioUrl: audioUrl, duration }
+          : s
+      )
+    );
+
+    // Update database
+    startTransition(async () => {
+      try {
+        await updateScene(sceneId, {
+          recordedAudioUrl: audioUrl,
+          duration,
+        });
+      } catch (error) {
+        console.error("Failed to save recorded audio:", error);
+      }
+    });
+  };
+
+  const handleRecordingDelete = async (sceneId: string) => {
+    // Update local state
+    setScenes((prev: Scene[]) =>
+      prev.map(s =>
+        s.id === sceneId
+          ? { ...s, recordedAudioUrl: undefined }
+          : s
+      )
+    );
+
+    // Update database
+    startTransition(async () => {
+      try {
+        await updateScene(sceneId, {
+          recordedAudioUrl: null,
+        });
+      } catch (error) {
+        console.error("Failed to delete recorded audio:", error);
+      }
+    });
+  };
+
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
@@ -526,20 +573,31 @@ export function LeftSidebar({
                     <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
                       <span>{scene.duration}s</span>
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        {scene.audioUrl && (
+                        {/* Play recorded or AI audio */}
+                        {(scene.recordedAudioUrl || scene.audioUrl) && (
                           <Button
                             variant="ghost"
                             size="icon"
-                            className={`h-6 w-6 ${playingAudio === scene.id ? 'text-primary' : 'text-green-500'}`}
+                            className={`h-6 w-6 ${playingAudio === scene.id ? 'text-primary' : scene.recordedAudioUrl ? 'text-blue-500' : 'text-green-500'}`}
                             onClick={(e) => {
                               e.stopPropagation();
-                              playAudio(scene.id, scene.audioUrl!);
+                              playAudio(scene.id, scene.recordedAudioUrl || scene.audioUrl!);
                             }}
                             title={playingAudio === scene.id ? "Stop audio" : "Play audio"}
                           >
                             <Play className="h-3 w-3" />
                           </Button>
                         )}
+                        {/* Voice Recorder */}
+                        <div onClick={(e) => e.stopPropagation()}>
+                          <VoiceRecorder
+                            sceneId={scene.id}
+                            existingAudioUrl={scene.recordedAudioUrl}
+                            onRecordingComplete={(audioUrl, duration) => handleRecordingComplete(scene.id, audioUrl, duration)}
+                            onRecordingDelete={() => handleRecordingDelete(scene.id)}
+                          />
+                        </div>
+                        {/* AI Voice Generator */}
                         <Button
                           variant="ghost"
                           size="icon"
@@ -549,7 +607,7 @@ export function LeftSidebar({
                             generateAudioForScene(scene.id);
                           }}
                           disabled={isGeneratingAudio === scene.id}
-                          title={scene.audioUrl ? "Regenerate audio" : "Generate audio"}
+                          title={scene.audioUrl ? "Regenerate AI audio" : "Generate AI audio"}
                         >
                           {isGeneratingAudio === scene.id ? (
                             <div className="h-3 w-3 border-2 border-current border-t-transparent rounded-full animate-spin" />

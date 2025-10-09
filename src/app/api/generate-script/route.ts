@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { openai } from "@/lib/openai";
 import { YOUTUBE_SCRIPT_PROMPT, AI_GENERATION_SYSTEM_PROMPT } from "@/lib/constants";
 
+// Increase timeout for long-running AI generation (10 minutes)
+export const maxDuration = 600;
+
 export async function POST(request: NextRequest) {
   try {
     const { topic } = await request.json();
@@ -10,8 +13,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Topic is required" }, { status: 400 });
     }
 
+    console.log('Generating script for topic:', topic);
+
     const prompt = YOUTUBE_SCRIPT_PROMPT.replace("{topic}", topic);
 
+    console.log('Calling OpenAI API...');
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
@@ -21,6 +27,7 @@ export async function POST(request: NextRequest) {
       temperature: 0.7,
       response_format: { type: "json_object" },
     });
+    console.log('OpenAI API call successful');
 
     const content = response.choices[0].message.content;
     if (!content) {
@@ -57,8 +64,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ slides });
   } catch (error) {
+    console.error("Error generating script:", error);
+    const errorMessage = error instanceof Error ? error.message : "Failed to generate script";
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to generate script" },
+      { error: errorMessage },
       { status: 500 }
     );
   }

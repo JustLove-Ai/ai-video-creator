@@ -53,6 +53,7 @@ export async function updateScene(
     imageUrl?: string;
     imagePrompt?: string;
     audioUrl?: string;
+    recordedAudioUrl?: string | null;
     voiceId?: string;
     annotations?: Prisma.InputJsonValue;
     themeOverride?: Prisma.InputJsonValue;
@@ -150,4 +151,15 @@ export async function duplicateScene(sceneId: string): Promise<Scene> {
 
   revalidatePath("/");
   return newScene;
+}
+
+/**
+ * Delete all scenes for a project
+ */
+export async function deleteAllScenes(projectId: string): Promise<void> {
+  await prisma.scene.deleteMany({
+    where: { projectId },
+  });
+
+  revalidatePath("/");
 }

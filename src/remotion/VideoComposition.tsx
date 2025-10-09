@@ -141,9 +141,9 @@ const SceneComponent: React.FC<SceneComponentProps> = ({
         />
       )}
 
-      {/* Render audio if available */}
-      {scene.audioUrl && (
-        <Audio src={staticFile(scene.audioUrl)} pauseWhenBuffering />
+      {/* Render audio if available (prioritize recorded audio over AI audio) */}
+      {(scene.recordedAudioUrl || scene.audioUrl) && (
+        <Audio src={staticFile(scene.recordedAudioUrl || scene.audioUrl!)} pauseWhenBuffering />
       )}
     </AbsoluteFill>
   );

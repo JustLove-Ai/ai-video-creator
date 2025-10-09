@@ -98,7 +98,8 @@ export interface Scene {
   annotations: AnnotationElement[];
   themeOverride?: Partial<Theme>;
   imageUrl?: string;  // Base64 data URL for scene image
-  audioUrl?: string;  // Base64 data URL for scene audio
+  audioUrl?: string;  // AI-generated TTS audio URL
+  recordedAudioUrl?: string;  // User-recorded audio URL (takes priority over audioUrl)
 }
 
 // Panel Types
