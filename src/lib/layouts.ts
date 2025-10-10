@@ -113,30 +113,42 @@ export function preserveContentOnLayoutChange(
 ): LayoutContent {
   const preserved: LayoutContent = {};
 
-  // Map common fields
-  if (currentContent.title) preserved.title = currentContent.title;
-  if (currentContent.subtitle) preserved.subtitle = currentContent.subtitle;
-  if (currentContent.body) preserved.body = currentContent.body;
-  if (currentContent.imageUrl) preserved.imageUrl = currentContent.imageUrl;
+  // Map common fields - only preserve if they have actual values (not undefined or empty string)
+  if (currentContent.title !== undefined && currentContent.title !== null && currentContent.title !== "") {
+    preserved.title = currentContent.title;
+  }
+  if (currentContent.subtitle !== undefined && currentContent.subtitle !== null && currentContent.subtitle !== "") {
+    preserved.subtitle = currentContent.subtitle;
+  }
+  if (currentContent.body !== undefined && currentContent.body !== null && currentContent.body !== "") {
+    preserved.body = currentContent.body;
+  }
+  if (currentContent.imageUrl !== undefined && currentContent.imageUrl !== null && currentContent.imageUrl !== "") {
+    preserved.imageUrl = currentContent.imageUrl;
+  }
 
   // Handle bullet points
-  if (newLayoutType === "imageBullets" && currentContent.body) {
+  if (newLayoutType === "imageBullets" && currentContent.body && currentContent.body !== "") {
     preserved.bulletPoints = currentContent.body.split(". ").filter(Boolean);
   }
-  if (currentContent.bulletPoints) {
+  if (currentContent.bulletPoints && currentContent.bulletPoints.length > 0) {
     preserved.bulletPoints = currentContent.bulletPoints;
   }
 
   // Handle two-column layout
   if (newLayoutType === "twoColumn") {
-    if (currentContent.body) {
+    if (currentContent.body && currentContent.body !== "") {
       const sentences = currentContent.body.split(". ").filter(Boolean);
       const midpoint = Math.ceil(sentences.length / 2);
       preserved.leftColumn = sentences.slice(0, midpoint).join(". ");
       preserved.rightColumn = sentences.slice(midpoint).join(". ");
     }
-    if (currentContent.leftColumn) preserved.leftColumn = currentContent.leftColumn;
-    if (currentContent.rightColumn) preserved.rightColumn = currentContent.rightColumn;
+    if (currentContent.leftColumn !== undefined && currentContent.leftColumn !== null && currentContent.leftColumn !== "") {
+      preserved.leftColumn = currentContent.leftColumn;
+    }
+    if (currentContent.rightColumn !== undefined && currentContent.rightColumn !== null && currentContent.rightColumn !== "") {
+      preserved.rightColumn = currentContent.rightColumn;
+    }
   }
 
   return preserved;

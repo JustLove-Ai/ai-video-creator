@@ -50,20 +50,22 @@ export function ImageBulletsLayout({
       }}
     >
       {/* Title */}
-      <div style={{ padding: hasBleed ? `${theme.spacing.padding}px ${theme.spacing.padding}px 0` : '0' }}>
-        <EditableText
-          value={content.title || ""}
-          onChange={(title) => onContentChange({ ...content, title })}
-          placeholder="Enter title"
-          style={{
-            fontFamily: theme.typography.titleFont,
-            fontSize: `${theme.typography.titleSize}px`,
-            fontWeight: theme.typography.titleWeight,
-            color: theme.typography.titleColor,
-            lineHeight: 1.2,
-          }}
-        />
-      </div>
+      {content.showTitle !== false && (
+        <div style={{ padding: hasBleed ? `${theme.spacing.padding}px ${theme.spacing.padding}px 0` : '0' }}>
+          <EditableText
+            value={content.title || ""}
+            onChange={(title) => onContentChange({ ...content, title })}
+            placeholder="Enter title"
+            style={{
+              fontFamily: theme.typography.titleFont,
+              fontSize: `${theme.typography.titleSize}px`,
+              fontWeight: theme.typography.titleWeight,
+              color: theme.typography.titleColor,
+              lineHeight: 1.2,
+            }}
+          />
+        </div>
+      )}
 
       {/* Image and Bullets in two columns */}
       <div className="flex-1 flex items-start" style={{ gap: hasBleed ? '0' : `${theme.spacing.gap * 2}px`, padding: hasBleed ? `${theme.spacing.gap}px 0 0 0` : '0' }}>

@@ -35,41 +35,43 @@ export function FullImageLayout({
       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent flex flex-col items-center justify-end"
         style={{ padding: `${theme.spacing.padding * 1.5}px` }}
       >
-        <EditableText
-          value={content.title || ""}
-          onChange={(title) => onContentChange({ ...content, title })}
-          placeholder="Enter title"
-          className="max-w-4xl"
-          style={{
-            fontFamily: theme.typography.titleFont,
-            fontSize: `${theme.typography.titleSize * 1.2}px`,
-            fontWeight: theme.typography.titleWeight,
-            color: "#ffffff",
-            lineHeight: 1.2,
-            textShadow: "0 2px 8px rgba(0,0,0,0.5)",
-          }}
-          align="center"
-        />
-        {content.subtitle && (
-          <>
-            <div style={{ height: `${theme.spacing.gap}px` }} />
-            <EditableText
-              value={content.subtitle || ""}
-              onChange={(subtitle) => onContentChange({ ...content, subtitle })}
-              placeholder="Enter subtitle"
-              className="max-w-3xl"
-              style={{
-                fontFamily: theme.typography.bodyFont,
-                fontSize: `${theme.typography.bodySize * 1.2}px`,
-                fontWeight: theme.typography.bodyWeight,
-                color: "#e5e7eb",
-                lineHeight: 1.5,
-                textShadow: "0 1px 4px rgba(0,0,0,0.5)",
-              }}
-              align="center"
-              multiline
-            />
-          </>
+        {content.showTitle !== false && (
+          <EditableText
+            value={content.title || ""}
+            onChange={(title) => onContentChange({ ...content, title })}
+            placeholder="Enter title"
+            className="max-w-4xl"
+            style={{
+              fontFamily: theme.typography.titleFont,
+              fontSize: `${theme.typography.titleSize * 1.2}px`,
+              fontWeight: theme.typography.titleWeight,
+              color: "#ffffff",
+              lineHeight: 1.2,
+              textShadow: "0 2px 8px rgba(0,0,0,0.5)",
+            }}
+            align="center"
+          />
+        )}
+        {content.showTitle !== false && content.showSubtitle !== false && (
+          <div style={{ height: `${theme.spacing.gap}px` }} />
+        )}
+        {content.showSubtitle !== false && (
+          <EditableText
+            value={content.subtitle || ""}
+            onChange={(subtitle) => onContentChange({ ...content, subtitle })}
+            placeholder="Enter subtitle"
+            className="max-w-3xl"
+            style={{
+              fontFamily: theme.typography.bodyFont,
+              fontSize: `${theme.typography.bodySize * 1.2}px`,
+              fontWeight: theme.typography.bodyWeight,
+              color: "#e5e7eb",
+              lineHeight: 1.5,
+              textShadow: "0 1px 4px rgba(0,0,0,0.5)",
+            }}
+            align="center"
+            multiline
+          />
         )}
       </div>
     </div>

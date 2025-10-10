@@ -20,31 +20,35 @@ export function TitleBodyLayout({ content, theme, onContentChange }: TitleBodyLa
         gap: `${theme.spacing.gap}px`,
       }}
     >
-      <EditableText
-        value={content.title || ""}
-        onChange={(title) => onContentChange({ ...content, title })}
-        placeholder="Enter title"
-        style={{
-          fontFamily: theme.typography.titleFont,
-          fontSize: `${theme.typography.titleSize}px`,
-          fontWeight: theme.typography.titleWeight,
-          color: theme.typography.titleColor,
-          lineHeight: 1.2,
-        }}
-      />
-      <EditableText
-        value={content.body || ""}
-        onChange={(body) => onContentChange({ ...content, body })}
-        placeholder="Enter body text"
-        style={{
-          fontFamily: theme.typography.bodyFont,
-          fontSize: `${theme.typography.bodySize}px`,
-          fontWeight: theme.typography.bodyWeight,
-          color: theme.typography.bodyColor,
-          lineHeight: 1.6,
-        }}
-        multiline
-      />
+      {content.showTitle !== false && (
+        <EditableText
+          value={content.title || ""}
+          onChange={(title) => onContentChange({ ...content, title })}
+          placeholder="Enter title"
+          style={{
+            fontFamily: theme.typography.titleFont,
+            fontSize: `${theme.typography.titleSize}px`,
+            fontWeight: theme.typography.titleWeight,
+            color: theme.typography.titleColor,
+            lineHeight: 1.2,
+          }}
+        />
+      )}
+      {content.showBody !== false && (
+        <EditableText
+          value={content.body || ""}
+          onChange={(body) => onContentChange({ ...content, body })}
+          placeholder="Enter body text"
+          style={{
+            fontFamily: theme.typography.bodyFont,
+            fontSize: `${theme.typography.bodySize}px`,
+            fontWeight: theme.typography.bodyWeight,
+            color: theme.typography.bodyColor,
+            lineHeight: 1.6,
+          }}
+          multiline
+        />
+      )}
     </div>
   );
 }

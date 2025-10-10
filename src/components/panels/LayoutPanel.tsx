@@ -160,26 +160,138 @@ export function LayoutPanel({ currentLayout, currentContent, onLayoutSelect, onC
         </div>
       </ScrollArea>
 
-      {/* Image Settings */}
-      {supportsBleed && (
-        <div className="p-4 border-t border-border">
+      {/* Layout Settings */}
+      <div className="p-4 border-t border-border space-y-3">
+        <div className="text-sm font-semibold mb-2">Layout Options</div>
+
+        {/* Visibility Toggles based on current layout */}
+        {(currentLayout === "cover" || currentLayout === "imageLeft" || currentLayout === "imageRight" ||
+          currentLayout === "imageBullets" || currentLayout === "fullImage" || currentLayout === "twoColumn" ||
+          currentLayout === "titleBody" || currentLayout === "centeredChart" || currentLayout === "comparison") && (
           <div className="flex items-center justify-between">
-            <Label htmlFor="image-bleed" className="text-sm font-medium">
-              Image Bleed
+            <Label htmlFor="show-title" className="text-sm">
+              Show Title
             </Label>
             <Switch
-              id="image-bleed"
-              checked={currentContent.imageBleed || false}
+              id="show-title"
+              checked={currentContent.showTitle !== false}
               onCheckedChange={(checked) => {
-                onContentChange({ ...currentContent, imageBleed: checked });
+                onContentChange({ ...currentContent, showTitle: checked });
               }}
             />
           </div>
-          <p className="text-xs text-muted-foreground mt-1">
-            Stretch image to edges without padding
-          </p>
-        </div>
-      )}
+        )}
+
+        {(currentLayout === "cover" || currentLayout === "fullImage") && (
+          <div className="flex items-center justify-between">
+            <Label htmlFor="show-subtitle" className="text-sm">
+              Show Subtitle
+            </Label>
+            <Switch
+              id="show-subtitle"
+              checked={currentContent.showSubtitle !== false}
+              onCheckedChange={(checked) => {
+                onContentChange({ ...currentContent, showSubtitle: checked });
+              }}
+            />
+          </div>
+        )}
+
+        {(currentLayout === "imageLeft" || currentLayout === "imageRight" || currentLayout === "titleBody") && (
+          <div className="flex items-center justify-between">
+            <Label htmlFor="show-body" className="text-sm">
+              Show Body
+            </Label>
+            <Switch
+              id="show-body"
+              checked={currentContent.showBody !== false}
+              onCheckedChange={(checked) => {
+                onContentChange({ ...currentContent, showBody: checked });
+              }}
+            />
+          </div>
+        )}
+
+        {currentLayout === "twoColumn" && (
+          <>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="show-left" className="text-sm">
+                Show Left Column
+              </Label>
+              <Switch
+                id="show-left"
+                checked={currentContent.showLeftColumn !== false}
+                onCheckedChange={(checked) => {
+                  onContentChange({ ...currentContent, showLeftColumn: checked });
+                }}
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="show-right" className="text-sm">
+                Show Right Column
+              </Label>
+              <Switch
+                id="show-right"
+                checked={currentContent.showRightColumn !== false}
+                onCheckedChange={(checked) => {
+                  onContentChange({ ...currentContent, showRightColumn: checked });
+                }}
+              />
+            </div>
+          </>
+        )}
+
+        {currentLayout === "comparison" && (
+          <>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="show-left" className="text-sm">
+                Show Left Label
+              </Label>
+              <Switch
+                id="show-left"
+                checked={currentContent.showLeftColumn !== false}
+                onCheckedChange={(checked) => {
+                  onContentChange({ ...currentContent, showLeftColumn: checked });
+                }}
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="show-right" className="text-sm">
+                Show Right Label
+              </Label>
+              <Switch
+                id="show-right"
+                checked={currentContent.showRightColumn !== false}
+                onCheckedChange={(checked) => {
+                  onContentChange({ ...currentContent, showRightColumn: checked });
+                }}
+              />
+            </div>
+          </>
+        )}
+
+        {/* Image Bleed Option */}
+        {supportsBleed && (
+          <>
+            <div className="border-t border-border pt-3 mt-3"></div>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="image-bleed" className="text-sm">
+                Image Bleed
+              </Label>
+              <Switch
+                id="image-bleed"
+                checked={currentContent.imageBleed || false}
+                onCheckedChange={(checked) => {
+                  onContentChange({ ...currentContent, imageBleed: checked });
+                }}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Stretch image to edges without padding
+            </p>
+          </>
+        )}
+      </div>
 
       {/* Info */}
       <div className="p-4 border-t border-border bg-muted/30">

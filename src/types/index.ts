@@ -38,6 +38,12 @@ export interface LayoutContent {
   imageBleed?: boolean; // When true, image stretches to edges
   chartData?: ChartData; // Chart data for chart layouts
   chartData2?: ChartData; // For comparison layout
+  // Visibility toggles
+  showTitle?: boolean; // Default true
+  showSubtitle?: boolean; // Default true
+  showBody?: boolean; // Default true
+  showLeftColumn?: boolean; // Default true
+  showRightColumn?: boolean; // Default true
 }
 
 // Theme System

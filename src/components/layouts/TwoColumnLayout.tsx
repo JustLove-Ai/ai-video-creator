@@ -21,65 +21,73 @@ export function TwoColumnLayout({ content, theme, onContentChange }: TwoColumnLa
       }}
     >
       {/* Title */}
-      <EditableText
-        value={content.title || ""}
-        onChange={(title) => onContentChange({ ...content, title })}
-        placeholder="Enter title"
-        style={{
-          fontFamily: theme.typography.titleFont,
-          fontSize: `${theme.typography.titleSize}px`,
-          fontWeight: theme.typography.titleWeight,
-          color: theme.typography.titleColor,
-          lineHeight: 1.2,
-        }}
-      />
+      {content.showTitle !== false && (
+        <EditableText
+          value={content.title || ""}
+          onChange={(title) => onContentChange({ ...content, title })}
+          placeholder="Enter title"
+          style={{
+            fontFamily: theme.typography.titleFont,
+            fontSize: `${theme.typography.titleSize}px`,
+            fontWeight: theme.typography.titleWeight,
+            color: theme.typography.titleColor,
+            lineHeight: 1.2,
+          }}
+        />
+      )}
 
       {/* Two Columns */}
       <div className="flex-1 flex" style={{ gap: `${theme.spacing.gap * 2}px` }}>
         {/* Left Column */}
-        <div className="flex-1 flex flex-col">
-          <EditableText
-            value={content.leftColumn || ""}
-            onChange={(leftColumn) => onContentChange({ ...content, leftColumn })}
-            placeholder="Left column content"
-            className="flex-1"
-            style={{
-              fontFamily: theme.typography.bodyFont,
-              fontSize: `${theme.typography.bodySize}px`,
-              fontWeight: theme.typography.bodyWeight,
-              color: theme.typography.bodyColor,
-              lineHeight: 1.6,
-            }}
-            multiline
-          />
-        </div>
+        {content.showLeftColumn !== false && (
+          <div className="flex-1 flex flex-col">
+            <EditableText
+              value={content.leftColumn || ""}
+              onChange={(leftColumn) => onContentChange({ ...content, leftColumn })}
+              placeholder="Left column content"
+              className="flex-1"
+              style={{
+                fontFamily: theme.typography.bodyFont,
+                fontSize: `${theme.typography.bodySize}px`,
+                fontWeight: theme.typography.bodyWeight,
+                color: theme.typography.bodyColor,
+                lineHeight: 1.6,
+              }}
+              multiline
+            />
+          </div>
+        )}
 
-        {/* Divider */}
-        <div
-          style={{
-            width: "2px",
-            backgroundColor: theme.accent,
-            opacity: 0.3,
-          }}
-        />
+        {/* Divider - only show if both columns are visible */}
+        {content.showLeftColumn !== false && content.showRightColumn !== false && (
+          <div
+            style={{
+              width: "2px",
+              backgroundColor: theme.accent,
+              opacity: 0.3,
+            }}
+          />
+        )}
 
         {/* Right Column */}
-        <div className="flex-1 flex flex-col">
-          <EditableText
-            value={content.rightColumn || ""}
-            onChange={(rightColumn) => onContentChange({ ...content, rightColumn })}
-            placeholder="Right column content"
-            className="flex-1"
-            style={{
-              fontFamily: theme.typography.bodyFont,
-              fontSize: `${theme.typography.bodySize}px`,
-              fontWeight: theme.typography.bodyWeight,
-              color: theme.typography.bodyColor,
-              lineHeight: 1.6,
-            }}
-            multiline
-          />
-        </div>
+        {content.showRightColumn !== false && (
+          <div className="flex-1 flex flex-col">
+            <EditableText
+              value={content.rightColumn || ""}
+              onChange={(rightColumn) => onContentChange({ ...content, rightColumn })}
+              placeholder="Right column content"
+              className="flex-1"
+              style={{
+                fontFamily: theme.typography.bodyFont,
+                fontSize: `${theme.typography.bodySize}px`,
+                fontWeight: theme.typography.bodyWeight,
+                color: theme.typography.bodyColor,
+                lineHeight: 1.6,
+              }}
+              multiline
+            />
+          </div>
+        )}
       </div>
     </div>
   );

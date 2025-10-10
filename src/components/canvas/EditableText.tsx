@@ -23,6 +23,7 @@ export function EditableText({
   align = "left",
 }: EditableTextProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -72,15 +73,21 @@ export function EditableText({
 
   return (
     <div
-      onClick={handleClick}
-      className={`cursor-text hover:outline hover:outline-2 hover:outline-dashed hover:outline-blue-400 transition-all rounded px-2 py-1 ${className}`}
-      style={{
-        ...style,
-        textAlign: align,
-        minHeight: "1.5em",
-      }}
+      className="relative group"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
-      {value || <span className="opacity-40">{placeholder}</span>}
+      <div
+        onClick={handleClick}
+        className={`cursor-text hover:outline hover:outline-2 hover:outline-dashed hover:outline-blue-400 transition-all rounded px-2 py-1 ${className}`}
+        style={{
+          ...style,
+          textAlign: align,
+          minHeight: "1.5em",
+        }}
+      >
+        {value || <span className="opacity-40">{placeholder}</span>}
+      </div>
     </div>
   );
 }

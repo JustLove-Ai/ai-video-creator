@@ -30,21 +30,23 @@ export function CenteredChartLayout({
       }}
     >
       {/* Title */}
-      <div>
-        <EditableText
-          value={content.title || ""}
-          onChange={(title) => onContentChange({ ...content, title })}
-          placeholder="Enter chart title"
-          style={{
-            fontFamily: theme.typography.titleFont,
-            fontSize: `${theme.typography.titleSize}px`,
-            fontWeight: theme.typography.titleWeight,
-            color: theme.typography.titleColor,
-            lineHeight: 1.2,
-          }}
-          align="center"
-        />
-      </div>
+      {content.showTitle !== false && (
+        <div>
+          <EditableText
+            value={content.title || ""}
+            onChange={(title) => onContentChange({ ...content, title })}
+            placeholder="Enter chart title"
+            style={{
+              fontFamily: theme.typography.titleFont,
+              fontSize: `${theme.typography.titleSize}px`,
+              fontWeight: theme.typography.titleWeight,
+              color: theme.typography.titleColor,
+              lineHeight: 1.2,
+            }}
+            align="center"
+          />
+        </div>
+      )}
 
       {/* Centered Chart/Image */}
       <div className="flex-1 flex items-center justify-center">
