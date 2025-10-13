@@ -28,6 +28,7 @@ import {
   type VideoProjectWithScenes,
 } from "@/app/actions/projects";
 import { duplicateScene } from "@/app/actions/scenes";
+import { toast } from "sonner";
 
 export function ProjectsPage() {
   const router = useRouter();
@@ -65,8 +66,10 @@ export function ProjectsPage() {
       router.push(`/editor/${newProject.id}`);
     } catch (error) {
       console.error("Failed to create project:", error);
-      alert("Failed to create project. Please try again.");
-    } finally {
+      toast.error("Failed to create project", {
+        description: "Please try again."
+      });
+    } finally{
       setIsCreating(false);
     }
   };
@@ -81,7 +84,9 @@ export function ProjectsPage() {
       setProjects(projects.filter((p) => p.id !== projectId));
     } catch (error) {
       console.error("Failed to delete project:", error);
-      alert("Failed to delete project. Please try again.");
+      toast.error("Failed to delete project", {
+        description: "Please try again."
+      });
     }
   };
 
@@ -97,7 +102,9 @@ export function ProjectsPage() {
       loadProjects(); // Reload to show the new project
     } catch (error) {
       console.error("Failed to duplicate project:", error);
-      alert("Failed to duplicate project. Please try again.");
+      toast.error("Failed to duplicate project", {
+        description: "Please try again."
+      });
     }
   };
 

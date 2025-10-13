@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Mic, Square, Play, Trash2, Check } from "lucide-react";
+import { toast } from "sonner";
 
 interface VoiceRecorderProps {
   sceneId: string;
@@ -96,7 +97,9 @@ export function VoiceRecorder({
       }, 1000);
     } catch (error) {
       console.error("Error accessing microphone:", error);
-      alert("Could not access microphone. Please check permissions.");
+      toast.error("Could not access microphone", {
+        description: "Please check permissions."
+      });
     }
   };
 

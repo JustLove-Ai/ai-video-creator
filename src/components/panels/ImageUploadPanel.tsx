@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { X, Upload, Sparkles, Image as ImageIcon, Trash2, Edit2 } from "lucide-react";
 import { getImageLibrary, addImageToLibrary, deleteImageFromLibrary, ImageMetadata } from "@/lib/imageLibrary";
 import { generateImage } from "@/app/actions/openai";
+import { toast } from "sonner";
 
 interface ImageUploadPanelProps {
   onClose: () => void;
@@ -59,30 +60,33 @@ export function ImageUploadPanel({ onClose, onImageSelect, imageBleed = false, o
 
     setIsGenerating(true);
 
-    startTransition(async () => {
-      try {
-        // Generate image using OpenAI
-        const result = await generateImage(aiPrompt);
+    try {
+      // Generate image using OpenAI
+      console.log('Starting image generation...');
+      const result = await generateImage(aiPrompt);
+      console.log('Image generation result:', result);
 
-        // Add to library with prompt (using base64 data URL)
-        const metadata = addImageToLibrary({
-          url: result.url,
-          type: "ai-generated",
-          name: `AI: ${aiPrompt.slice(0, 50)}`,
-          prompt: aiPrompt,
-        });
+      // Add to library with prompt (using base64 data URL)
+      const metadata = addImageToLibrary({
+        url: result.url,
+        type: "ai-generated",
+        name: `AI: ${aiPrompt.slice(0, 50)}`,
+        prompt: aiPrompt,
+      });
 
-        setImageLibrary(getImageLibrary());
-        onImageSelect(result.url);
-        setAiPrompt(""); // Clear prompt after successful generation
-        onClose();
-      } catch (error) {
-        console.error("Failed to generate image:", error);
-        alert("Failed to generate image. Please try again.");
-      } finally {
-        setIsGenerating(false);
-      }
-    });
+      setImageLibrary(getImageLibrary());
+      onImageSelect(result.url);
+      setAiPrompt(""); // Clear prompt after successful generation
+      toast.success("Image generated successfully!");
+      onClose();
+    } catch (error) {
+      console.error("Failed to generate image:", error);
+      toast.error("Failed to generate image", {
+        description: error instanceof Error ? error.message : "Please try again."
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleLibraryImageSelect = (image: ImageMetadata) => {

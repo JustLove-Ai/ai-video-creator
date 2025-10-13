@@ -9,6 +9,7 @@ import { X, Download } from 'lucide-react';
 import { prepareVideoAssets, type AssetPreparationProgress } from '@/lib/assetPreparation';
 import { AssetPreparationModal } from './AssetPreparationModal';
 import type { TransitionType, TransitionDirection, CaptionSettings } from './VideoSettingsPanel';
+import { toast } from "sonner";
 
 interface VideoSettings {
   captions: CaptionSettings;
@@ -121,12 +122,17 @@ export function VideoPreviewPanel({ scenes, theme, voice, videoSettings, onClose
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        toast.success("Video exported successfully!");
       } else {
-        alert(`Export failed: ${data.error || 'Unknown error'}`);
+        toast.error("Export failed", {
+          description: data.error || 'Unknown error'
+        });
       }
     } catch (error) {
       console.error('Export error:', error);
-      alert('Failed to export video. Check console for details.');
+      toast.error("Failed to export video", {
+        description: "Check console for details."
+      });
     } finally {
       setIsExporting(false);
     }

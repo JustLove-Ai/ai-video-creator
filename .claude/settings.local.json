@@ -1,27 +1,17 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm install:*)",
-      "Bash(npm run build:*)",
-      "Bash(git log:*)",
-      "Bash(git add:*)",
-      "Bash(git commit -m \"$(cat <<''EOF''\nAdd slide-based presentation system with layouts, themes, annotations, and image bleed feature\n\nImplemented comprehensive slide-based presentation system transforming the canvas from freeform to structured layouts:\n\n- Added 8 layout templates (cover, imageLeft, imageRight, imageBullets, fullImage, twoColumn, titleBody, blank)\n- Created global theme system with 6 presets and per-slide override capability\n- Implemented annotation system supporting freehand drawing and shapes (arrow, rectangle, circle, line, text)\n- Added right-side panels (Layout, Theme, ImageUpload) that slide in and shift canvas\n- Created inline click-to-edit functionality for text and images\n- Implemented image bleed toggle to stretch images to edges without padding/rounded corners\n- Auto-populates layout content from scene scripts with content preservation on layout switching\n- Added theme preview that applies immediately to current slide before global application\n\nNew components:\n- EditableText, EditableImage for inline editing\n- 8 layout components with responsive design\n- LayoutRenderer for routing to appropriate layouts\n- AnnotationLayer with SVG-based drawing system\n- AnnotationToolbar with color picker and stroke controls\n- LayoutPanel, ThemePanel, ImageUploadPanel for slide customization\n- Switch UI component using Radix UI\n\nNew utilities:\n- Theme system (src/lib/themes.ts) with presets and merging\n- Layout utilities (src/lib/layouts.ts) for parsing and content preservation\n- Centralized TypeScript types (src/types/index.ts)\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
-      "Bash(git push:*)",
       "Read(//c/Users/spoil/Downloads/**)",
-      "Bash(git commit:*)",
-      "WebSearch",
-      "WebFetch(domain:platform.openai.com)",
-      "WebFetch(domain:www.remotion.dev)",
-      "Bash(npx prisma init:*)",
-      "Bash(npx prisma generate:*)",
-      "Bash(npm run dev:*)",
-      "Bash(curl -X POST http://localhost:3004/api/generate-script -H \"Content-Type: application/json\" -d '{\"\"\"\"topic\"\"\"\":\"\"\"\"test\"\"\"\"}')",
-      "Bash(curl:*)",
-      "Bash(npx shadcn@latest add:*)",
-      "Bash(clear)",
       "Bash(npx prisma:*)",
-      "Bash(git mv:*)",
-      "Bash(base64,...\"\n- Images must be actual file paths or public URLs\n\n**Current Behavior**\n- Data URL images are removed from scenes before export\n- Export proceeds without images (temporary)\n- Console logs identify which scenes had data URLs\n\n**Proper Solution (TODO)**\n- Users should use \"Preview\" before \"Export\"\n- Preview calls prepareVideoAssets() which converts data URLs to files\n- Export should only be called with already-prepared scenes\n- OR: Export should call prepareVideoAssets() first\n\n**Files Changed**\n- src/app/api/export-video/route.ts: Added preparedScenes mapping\n- Uses preparedScenes in getCompositions and renderMedia\n\nThis allows export to work, but without images that haven''t been converted to files yet.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nAdd voice recording feature for scenes\n\nFeatures added:\n- Voice recorder component with record/play/delete controls\n- User-recorded audio takes priority over AI-generated audio\n- Saves recordings as WebM files in public/audio\n- Auto-calculates duration from recorded audio\n- Visual indicators (blue for recorded, green for AI audio)\n- Database field for recordedAudioUrl\n- Seamless Remotion integration\n\nBug fixes:\n- Fix port configuration to work on any port (3000, 3002, etc.)\n- Remove invalid API config from next.config.ts\n- Improve AI prompt for Gamma-quality content generation\n- Add bulk scene deletion to prevent race conditions\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git push:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nAdd layout visibility toggles for content elements\n\nFeatures added:\n- Layout panel now includes visibility toggle switches\n- Can show/hide title, subtitle, body, and columns per layout\n- Toggles in Layout Options section of LayoutPanel\n- All layouts respect showTitle, showSubtitle, showBody flags\n- Two-column and comparison layouts support per-column toggles\n- Default visibility is true when undefined\n\nChanges:\n- Add showTitle, showSubtitle, showBody, showLeftColumn, showRightColumn to LayoutContent type\n- Update LayoutPanel with conditional toggle switches based on layout type\n- Wrap text fields in all layouts with visibility conditionals\n- Update layout preservation logic to only preserve non-empty values\n- Remove delete button functionality from EditableText component\n- Simplify EditableText back to basic implementation\n\nBenefits:\n- Cleaner UI without placeholder text clutter\n- User-friendly toggle switches instead of delete buttons\n- Visibility settings persist when switching layouts\n- More control over layout composition\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(npm run dev:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx shadcn@latest add:*)",
+      "Bash(node:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []

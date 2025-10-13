@@ -15,7 +15,8 @@ import {
   Volume2,
   Edit,
   Sparkles,
-  Play
+  Play,
+  FileText
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -27,13 +28,15 @@ import {
 import { Scene, Theme, LayoutType, AnnotationElement, LayoutContent } from "@/types";
 import { parseScriptToLayout } from "@/lib/layouts";
 import { YOUTUBE_SCRIPT_PROMPT, AI_GENERATION_SYSTEM_PROMPT } from "@/lib/constants";
-import { generateYouTubeScript, generateSceneContent, generateSpeech } from "@/app/actions/openai";
+import { generateYouTubeScript, generateSceneContent, generateSpeech, importUserScript } from "@/app/actions/openai";
 import { createScene, updateScene, deleteScene, deleteAllScenes } from "@/app/actions/scenes";
 import { getProject } from "@/app/actions/projects";
 import { getAudioDuration } from "@/lib/audioUtils";
 import { VoiceRecorder } from "@/components/VoiceRecorder";
+import { ImportScriptModal } from "@/components/modals/ImportScriptModal";
 import { useTransition } from "react";
 import type { Prisma } from "@prisma/client";
+import { toast } from "sonner";
 
 interface LeftSidebarProps {
   scenes: Scene[];
@@ -84,6 +87,7 @@ export function LeftSidebar({
   const [isGeneratingAudio, setIsGeneratingAudio] = useState<string | null>(null);
   const [playingAudio, setPlayingAudio] = useState<string | null>(null);
   const [audioElements, setAudioElements] = useState<Map<string, HTMLAudioElement>>(new Map());
+  const [showImportScriptModal, setShowImportScriptModal] = useState(false);
 
   const addScene = () => {
     if (!projectId) return;
@@ -117,7 +121,9 @@ export function LeftSidebar({
         setEditingSceneId(newScene.id);
       } catch (error) {
         console.error("Failed to create scene:", error);
-        alert("Failed to create scene. Please try again.");
+        toast.error("Failed to create scene", {
+          description: "Please try again."
+        });
       }
     });
   };
@@ -162,7 +168,9 @@ export function LeftSidebar({
       setScriptTopic("");
     } catch (error) {
       console.error("Error generating script:", error);
-      alert("Failed to generate script. Please try again.");
+      toast.error("Failed to generate script", {
+        description: "Please try again."
+      });
     } finally {
       setIsGeneratingScript(false);
     }
@@ -170,6 +178,44 @@ export function LeftSidebar({
 
   const generateSceneWithAI = () => {
     setShowTopicInput(true);
+  };
+
+  const handleImportScript = async (script: string, mode: "exact" | "outline") => {
+    if (!projectId) return;
+
+    try {
+      // Delete existing scenes
+      if (scenes.length > 0) {
+        await deleteAllScenes(projectId);
+      }
+
+      // Import and process the script
+      await importUserScript(script, mode, projectId);
+
+      // Reload project to get the new scenes
+      const project = await getProject(projectId);
+
+      if (project) {
+        // Convert Prisma scenes to Scene type
+        const convertedScenes: Scene[] = project.scenes.map((s) => ({
+          id: s.id,
+          content: s.content,
+          duration: s.duration,
+          layout: s.layout as LayoutType,
+          layoutContent: s.layoutContent as LayoutContent,
+          annotations: (s.annotations || []) as AnnotationElement[],
+          themeOverride: (s.themeOverride as unknown) as Partial<Theme> | undefined,
+        }));
+
+        setScenes(convertedScenes);
+        if (convertedScenes.length > 0) {
+          setActiveSceneId(convertedScenes[0].id);
+        }
+      }
+    } catch (error) {
+      console.error("Error importing script:", error);
+      throw error; // Re-throw to be handled by modal
+    }
   };
 
   const updateSceneContent = (sceneId: string, content: string) => {
@@ -263,7 +309,9 @@ export function LeftSidebar({
         setAiPrompt("");
       } catch (error) {
         console.error("Failed to generate scene content:", error);
-        alert("Failed to generate content. Please try again.");
+        toast.error("Failed to generate content", {
+          description: "Please try again."
+        });
       } finally {
         setIsGeneratingAI(null);
       }
@@ -273,7 +321,7 @@ export function LeftSidebar({
   const generateAudioForScene = async (sceneId: string) => {
     const scene = scenes.find(s => s.id === sceneId);
     if (!scene || !scene.content.trim()) {
-      alert("Please add content to the scene before generating audio.");
+      toast.warning("Please add content to the scene before generating audio.");
       return;
     }
 
@@ -303,7 +351,9 @@ export function LeftSidebar({
         );
       } catch (error) {
         console.error("Failed to generate audio:", error);
-        alert("Failed to generate audio. Please try again.");
+        toast.error("Failed to generate audio", {
+          description: "Please try again."
+        });
       } finally {
         setIsGeneratingAudio(null);
       }
@@ -467,6 +517,15 @@ export function LeftSidebar({
             >
               <Plus className="h-4 w-4" />
               Scene
+            </Button>
+            <Button
+              onClick={() => setShowImportScriptModal(true)}
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start text-muted-foreground hover:text-foreground gap-2"
+            >
+              <FileText className="h-4 w-4" />
+              Import Script
             </Button>
             <Button
               onClick={generateSceneWithAI}
@@ -661,6 +720,13 @@ export function LeftSidebar({
         </div>
         </ScrollArea>
       </div>
+
+      {/* Import Script Modal */}
+      <ImportScriptModal
+        isOpen={showImportScriptModal}
+        onClose={() => setShowImportScriptModal(false)}
+        onImport={handleImportScript}
+      />
     </div>
   );
 }
