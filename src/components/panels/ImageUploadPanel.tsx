@@ -66,16 +66,33 @@ export function ImageUploadPanel({ onClose, onImageSelect, imageBleed = false, o
       const result = await generateImage(aiPrompt);
       console.log('Image generation result:', result);
 
-      // Add to library with prompt (using base64 data URL)
+      // Save the base64 image to file system
+      const filename = `ai-generated-${Date.now()}.png`;
+      const saveResponse = await fetch('/api/save-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          base64Image: result.url,
+          filename,
+        }),
+      });
+
+      if (!saveResponse.ok) {
+        throw new Error('Failed to save image to file system');
+      }
+
+      const { url: savedUrl } = await saveResponse.json();
+
+      // Add to library with file system URL (not base64)
       const metadata = addImageToLibrary({
-        url: result.url,
+        url: savedUrl,
         type: "ai-generated",
         name: `AI: ${aiPrompt.slice(0, 50)}`,
         prompt: aiPrompt,
       });
 
       setImageLibrary(getImageLibrary());
-      onImageSelect(result.url);
+      onImageSelect(savedUrl);
       setAiPrompt(""); // Clear prompt after successful generation
       toast.success("Image generated successfully!");
       onClose();

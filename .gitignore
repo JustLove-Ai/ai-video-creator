@@ -44,3 +44,9 @@ next-env.d.ts
 
 # Exported videos
 /public/exports
+
+# User-generated and AI-generated images
+/public/images/*.png
+/public/images/*.jpg
+/public/images/*.jpeg
+/public/images/*.webp
