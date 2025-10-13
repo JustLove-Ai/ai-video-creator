@@ -50,3 +50,8 @@ next-env.d.ts
 /public/images/*.jpg
 /public/images/*.jpeg
 /public/images/*.webp
+
+# Voice recordings
+/public/voice-record/*.webm
+/public/voice-record/*.mp3
+/public/voice-record/*.wav

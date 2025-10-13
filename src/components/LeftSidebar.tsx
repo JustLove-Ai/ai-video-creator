@@ -16,7 +16,8 @@ import {
   Edit,
   Sparkles,
   Play,
-  FileText
+  FileText,
+  Mic
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -34,6 +35,7 @@ import { getProject } from "@/app/actions/projects";
 import { getAudioDuration } from "@/lib/audioUtils";
 import { VoiceRecorder } from "@/components/VoiceRecorder";
 import { ImportScriptModal } from "@/components/modals/ImportScriptModal";
+import { VoiceToSlidesModal } from "@/components/modals/VoiceToSlidesModal";
 import { useTransition } from "react";
 import type { Prisma } from "@prisma/client";
 import { toast } from "sonner";
@@ -88,6 +90,7 @@ export function LeftSidebar({
   const [playingAudio, setPlayingAudio] = useState<string | null>(null);
   const [audioElements, setAudioElements] = useState<Map<string, HTMLAudioElement>>(new Map());
   const [showImportScriptModal, setShowImportScriptModal] = useState(false);
+  const [showVoiceToSlidesModal, setShowVoiceToSlidesModal] = useState(false);
 
   const addScene = () => {
     if (!projectId) return;
@@ -528,6 +531,15 @@ export function LeftSidebar({
               Import Script
             </Button>
             <Button
+              onClick={() => setShowVoiceToSlidesModal(true)}
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start text-muted-foreground hover:text-foreground gap-2"
+            >
+              <Mic className="h-4 w-4" />
+              Voice to Slides
+            </Button>
+            <Button
               onClick={generateSceneWithAI}
               variant="ghost"
               size="sm"
@@ -726,6 +738,13 @@ export function LeftSidebar({
         isOpen={showImportScriptModal}
         onClose={() => setShowImportScriptModal(false)}
         onImport={handleImportScript}
+      />
+
+      {/* Voice to Slides Modal */}
+      <VoiceToSlidesModal
+        isOpen={showVoiceToSlidesModal}
+        onClose={() => setShowVoiceToSlidesModal(false)}
+        onTranscriptionComplete={handleImportScript}
       />
     </div>
   );
