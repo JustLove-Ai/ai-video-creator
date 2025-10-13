@@ -6,7 +6,7 @@ import { Prisma } from "@prisma/client";
 import { openai } from "@/lib/openai";
 
 /**
- * Generate image using DALL-E via API endpoint
+ * Generate image using DALL-E
  * Returns base64 encoded image data suitable for Remotion
  */
 export async function generateImage(prompt: string, sceneId?: string): Promise<{
@@ -14,32 +14,31 @@ export async function generateImage(prompt: string, sceneId?: string): Promise<{
   b64_json?: string;
 }> {
   try {
-    // Server-side: construct URL from env or use relative path via localhost
-    // The actual port is auto-detected by Next.js
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ||
-                    process.env.NEXTAUTH_URL ||
-                    `http://localhost:${process.env.PORT || '3000'}`;
-    const apiUrl = typeof window === 'undefined' ? `${baseUrl}/api/images` : '/api/images';
+    console.log('Generating image with prompt:', prompt.substring(0, 50) + '...');
 
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt }),
+    const response = await openai.images.generate({
+      model: "dall-e-3",
+      prompt,
+      n: 1,
+      size: "1024x1024",
+      response_format: "b64_json",
     });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-      throw new Error(errorData.error || 'Failed to generate image');
+    if (!response.data || response.data.length === 0) {
+      throw new Error("No image data received from API");
     }
 
-    const data = await response.json();
+    const imageData = response.data[0];
+    const url = `data:image/png;base64,${imageData.b64_json}`;
+
+    console.log('Image generated successfully');
 
     // Save to database if sceneId provided
     if (sceneId) {
       await prisma.scene.update({
         where: { id: sceneId },
         data: {
-          imageUrl: data.url,
+          imageUrl: url,
           imagePrompt: prompt,
         },
       });
@@ -47,8 +46,8 @@ export async function generateImage(prompt: string, sceneId?: string): Promise<{
     }
 
     return {
-      url: data.url,
-      b64_json: data.b64_json,
+      url,
+      b64_json: imageData.b64_json,
     };
   } catch (error) {
     console.error("Error generating image:", error);
@@ -57,7 +56,7 @@ export async function generateImage(prompt: string, sceneId?: string): Promise<{
 }
 
 /**
- * Generate speech using OpenAI TTS via API endpoint
+ * Generate speech using OpenAI TTS
  * Returns base64 encoded audio data suitable for Remotion
  */
 export async function generateSpeech(
@@ -69,31 +68,28 @@ export async function generateSpeech(
   b64_json: string;
 }> {
   try {
-    // Server-side: construct URL from env or use relative path via localhost
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ||
-                    process.env.NEXTAUTH_URL ||
-                    `http://localhost:${process.env.PORT || '3000'}`;
-    const apiUrl = typeof window === 'undefined' ? `${baseUrl}/api/voices` : '/api/voices';
+    console.log('Generating speech with voice:', voice);
 
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text, voice }),
+    const mp3 = await openai.audio.speech.create({
+      model: "tts-1-hd",
+      voice,
+      input: text,
+      speed: 1.0,
+      response_format: "mp3",
     });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-      throw new Error(errorData.error || 'Failed to generate speech');
-    }
+    const buffer = Buffer.from(await mp3.arrayBuffer());
+    const b64_json = buffer.toString("base64");
+    const url = `data:audio/mp3;base64,${b64_json}`;
 
-    const data = await response.json();
+    console.log('Speech generated successfully');
 
     // Save to database if sceneId provided
     if (sceneId) {
       await prisma.scene.update({
         where: { id: sceneId },
         data: {
-          audioUrl: data.url,
+          audioUrl: url,
           voiceId: voice,
         },
       });
@@ -106,7 +102,7 @@ export async function generateSpeech(
             projectId: scene.projectId,
             sceneId,
             type: "audio",
-            url: data.url,
+            url,
             model: "tts-1-hd",
             prompt: text.substring(0, 500),
           },
@@ -116,7 +112,7 @@ export async function generateSpeech(
       revalidatePath("/");
     }
 
-    return { url: data.url, b64_json: data.b64_json };
+    return { url, b64_json };
   } catch (error) {
     console.error("Error generating speech:", error);
     throw new Error(error instanceof Error ? error.message : "Failed to generate speech");
@@ -128,28 +124,108 @@ export async function generateSpeech(
  */
 export async function generateYouTubeScript(topic: string, projectId: string): Promise<unknown[]> {
   try {
-    // Server-side: construct URL from env or use relative path via localhost
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ||
-                    process.env.NEXTAUTH_URL ||
-                    `http://localhost:${process.env.PORT || '3000'}`;
-    const apiUrl = typeof window === 'undefined' ? `${baseUrl}/api/generate-script` : '/api/generate-script';
+    console.log('Generating script for topic:', topic);
 
-    console.log('Fetching script from:', apiUrl);
+    // Import constants
+    const YOUTUBE_SCRIPT_PROMPT = `You are an expert presentation and video script writer who creates engaging, information-rich content.
 
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ topic }),
+Your task is to create a comprehensive, professional presentation with 10-15 detailed slides that deeply explore the topic.
+
+## CONTENT QUALITY REQUIREMENTS:
+
+### Rich, Detailed Content
+- Each slide should contain substantial, valuable information
+- Use 3-5 bullet points per slide when listing information
+- Include specific examples, statistics, or concrete details
+- Provide actionable insights, not just vague statements
+- Make every slide educational and memorable
+
+### Professional Structure
+1. **Title Slide** - Compelling title + engaging subtitle
+2. **Introduction** - Context, importance, and what viewers will learn (2-3 bullets)
+3. **Core Content** - Break main topic into 5-8 detailed slides, each covering a specific aspect
+4. **Practical Applications** - Real examples or use cases (bullets or comparisons)
+5. **Key Takeaways** - Summary slide with main points
+6. **Next Steps** - Clear call-to-action or further resources
+
+## OUTPUT FORMAT:
+
+Return valid JSON with a "slides" array. Each slide should have rich content:
+
+{
+  "slides": [
+    {
+      "section": "Introduction",
+      "layout": "cover",
+      "narration": "Natural, conversational voiceover script (2-3 sentences)",
+      "title": "Main Slide Title",
+      "subtitle": "Descriptive subtitle that adds context",
+      "body": "Additional explanatory text when needed (1-2 sentences)",
+      "bulletPoints": ["Detailed point one", "Detailed point two", "Detailed point three"]
+    }
+  ]
+}
+
+## LAYOUT GUIDELINES:
+
+- **cover**: Title slides, section breaks
+- **titleBody**: Explanations with paragraph text
+- **imageBullets**: Lists of 3-5 detailed bullet points (primary layout for content)
+- **imageLeft/imageRight**: Key concepts with supporting text
+- **twoColumn**: Comparisons (before/after, pros/cons, etc.)
+
+Now write a detailed, comprehensive script about: ${topic}`;
+
+    const AI_GENERATION_SYSTEM_PROMPT = `You are a professional presentation content generator. Your output must be:
+
+1. COMPREHENSIVE: 10-15 detailed slides minimum
+2. RICH CONTENT: Each slide has 3-5 bullet points with specific, actionable information
+3. PROFESSIONAL: Quality comparable to business presentations or educational content
+4. VALID JSON ONLY: No markdown, no code blocks, no explanations - just pure JSON
+
+Return format: {"slides": [{"section": "...", "layout": "...", "narration": "2-3 detailed sentences", "title": "...", "subtitle": "...", "body": "...", "bulletPoints": ["detailed point 1", "detailed point 2", "detailed point 3"]}, ...]}`;
+
+    console.log('Calling OpenAI API...');
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        { role: "system", content: AI_GENERATION_SYSTEM_PROMPT },
+        { role: "user", content: YOUTUBE_SCRIPT_PROMPT },
+      ],
+      temperature: 0.7,
+      response_format: { type: "json_object" },
     });
+    console.log('OpenAI API call successful');
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-      console.error('Script generation failed:', errorData);
-      throw new Error(errorData.error || 'Failed to generate script');
+    const content = response.choices[0].message.content;
+    if (!content) {
+      throw new Error("No content generated");
     }
 
-    const data = await response.json();
-    const slides = data.slides || [];
+    let scriptData;
+    try {
+      scriptData = JSON.parse(content);
+    } catch {
+      throw new Error("Failed to parse AI response as JSON");
+    }
+
+    // Handle various response formats from OpenAI
+    let slides: unknown[] = [];
+
+    if (Array.isArray(scriptData)) {
+      slides = scriptData;
+    } else {
+      const data = scriptData as Record<string, unknown>;
+      slides = (data.slides as unknown[])
+        || (data.script as unknown[])
+        || (data.response as unknown[])
+        || (data.scenes as unknown[])
+        || [];
+
+      if (slides.length === 0 && (data.section || data.narration || data.layout)) {
+        slides = [scriptData];
+      }
+    }
 
     // Create scenes in database
     const scenes = await Promise.all(
