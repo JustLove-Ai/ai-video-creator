@@ -9,7 +9,14 @@ export type LayoutType =
   | "titleBody"
   | "blank"
   | "centeredChart"
-  | "comparison";
+  | "comparison"
+  | "quote"
+  | "steps2"
+  | "steps3"
+  | "steps5"
+  | "imageGrid2"
+  | "imageGrid4"
+  | "imageGrid6";
 
 // Chart Data
 export interface ChartData {
@@ -33,11 +40,20 @@ export interface LayoutContent {
   bulletPoints?: string[];
   imageUrl?: string;
   imageUrl2?: string; // For comparison layout
+  imageUrl3?: string; // For image grids
+  imageUrl4?: string; // For image grids
+  imageUrl5?: string; // For image grids
+  imageUrl6?: string; // For image grids
   leftColumn?: string;
   rightColumn?: string;
-  imageBleed?: boolean; // When true, image stretches to edges
+  imageBleed?: boolean; // When true, image stretches to edges (default: true)
   chartData?: ChartData; // Chart data for chart layouts
   chartData2?: ChartData; // For comparison layout
+  // Quote layout
+  quote?: string;
+  quoteAuthor?: string;
+  // Step-by-step layouts
+  steps?: Array<{ title: string; description: string }>;
   // Visibility toggles
   showTitle?: boolean; // Default true
   showSubtitle?: boolean; // Default true

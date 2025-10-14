@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useTransition } from "react";
+import { useState, useEffect, useTransition, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { TopToolbar } from "./TopToolbar";
@@ -14,6 +14,7 @@ import { ChartsPanel } from "./panels/ChartsPanel";
 import { VideoPreviewPanel } from "./panels/VideoPreviewPanel";
 import { VideoSettingsPanel } from "./panels/VideoSettingsPanel";
 import { ExportProgressModal } from "./panels/ExportProgressModal";
+import { BeautifySlidesModal } from "./modals/BeautifySlidesModal";
 import { Scene, RightPanelType, Theme, LayoutType, ChartData } from "@/types";
 import { themePresets, mergeTheme } from "@/lib/themes";
 import { parseScriptToLayout, preserveContentOnLayoutChange } from "@/lib/layouts";
@@ -57,6 +58,7 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
   const [exportStatus, setExportStatus] = useState<"bundling" | "rendering" | "success" | "error" | null>(null);
   const [exportError, setExportError] = useState<string>("");
   const [exportVideoUrl, setExportVideoUrl] = useState<string>("");
+  const [showBeautifyModal, setShowBeautifyModal] = useState(false);
 
   // Video and Audio Settings
   const [videoSettings, setVideoSettings] = useState<VideoSettings>({
@@ -78,6 +80,9 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
     speed: 1.0,
     pitch: 1.0,
   });
+
+  // Debounce timer ref (must be declared before useEffect)
+  const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Load project on mount
   useEffect(() => {
@@ -225,23 +230,30 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
     }
   };
 
-  // Handle scene update
+  // Handle scene update with debouncing
   const handleSceneUpdate = (updatedScene: Scene) => {
+    // Update local state immediately
     setScenes((prev) => prev.map((s) => (s.id === activeSceneId ? updatedScene : s)));
 
-    // Save to database
-    startTransition(async () => {
-      try {
-        await updateScene(updatedScene.id, {
-          content: updatedScene.content,
-          duration: updatedScene.duration,
-          layoutContent: updatedScene.layoutContent as Prisma.InputJsonValue,
-          annotations: updatedScene.annotations as Prisma.InputJsonValue,
-        });
-      } catch (error) {
-        console.error("Failed to update scene:", error);
-      }
-    });
+    // Debounce database save (wait 1 second after last edit)
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+    }
+
+    saveTimerRef.current = setTimeout(() => {
+      startTransition(async () => {
+        try {
+          await updateScene(updatedScene.id, {
+            content: updatedScene.content,
+            duration: updatedScene.duration,
+            layoutContent: updatedScene.layoutContent as Prisma.InputJsonValue,
+            annotations: updatedScene.annotations as Prisma.InputJsonValue,
+          });
+        } catch (error) {
+          console.error("Failed to update scene:", error);
+        }
+      });
+    }, 1000); // Wait 1 second after last edit
   };
 
   // Handle image upload/selection
@@ -328,6 +340,33 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
     });
   };
 
+  // Handle beautify complete - reload project data
+  const handleBeautifyComplete = async () => {
+    try {
+      const loadedProject = await getProject(projectId);
+      if (!loadedProject) return;
+
+      // Convert Prisma scenes to Scene type
+      const convertedScenes: Scene[] = loadedProject.scenes.map((s) => ({
+        id: s.id,
+        content: s.content,
+        duration: s.duration,
+        layout: s.layout as LayoutType,
+        layoutContent: s.layoutContent as unknown as Scene["layoutContent"],
+        annotations: (s.annotations as unknown as Scene["annotations"]) || [],
+        themeOverride: s.themeOverride as unknown as Partial<Theme> | undefined,
+      }));
+
+      setScenes(convertedScenes);
+      // Keep the active scene if it still exists
+      if (!convertedScenes.find((s) => s.id === activeSceneId)) {
+        setActiveSceneId(convertedScenes[0]?.id || "");
+      }
+    } catch (error) {
+      console.error("Failed to reload project after beautification:", error);
+    }
+  };
+
   return (
     <div className="h-screen bg-background text-foreground flex flex-col overflow-hidden">
       {/* Top Toolbar */}
@@ -342,6 +381,7 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
         onTitleUpdate={handleTitleUpdate}
         onPreview={() => setShowVideoPreview(true)}
         onExport={() => setRightPanel("videoSettings")}
+        onBeautify={() => setShowBeautifyModal(true)}
       />
 
       {/* Main Content Area */}
@@ -597,6 +637,14 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
           } : undefined}
         />
       )}
+
+      {/* Beautify Slides Modal */}
+      <BeautifySlidesModal
+        isOpen={showBeautifyModal}
+        onClose={() => setShowBeautifyModal(false)}
+        projectId={projectId}
+        onComplete={handleBeautifyComplete}
+      />
     </div>
   );
 }

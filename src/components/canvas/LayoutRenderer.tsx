@@ -11,6 +11,9 @@ import { TitleBodyLayout } from "@/components/layouts/TitleBodyLayout";
 import { BlankLayout } from "@/components/layouts/BlankLayout";
 import { CenteredChartLayout } from "@/components/layouts/CenteredChartLayout";
 import { ComparisonLayout } from "@/components/layouts/ComparisonLayout";
+import { QuoteLayout } from "@/components/layouts/QuoteLayout";
+import { StepsLayout } from "@/components/layouts/StepsLayout";
+import { ImageGridLayout } from "@/components/layouts/ImageGridLayout";
 
 interface LayoutRendererProps {
   layoutType: LayoutType;
@@ -105,6 +108,83 @@ export function LayoutRenderer({
           onContentChange={onContentChange}
           onImageReplace={onImageReplace}
           onChartAdd={onChartAdd}
+        />
+      );
+
+    case "quote":
+      return (
+        <QuoteLayout
+          content={content}
+          theme={theme}
+          onContentChange={onContentChange}
+          onImageReplace={onImageReplace}
+          onChartAdd={onChartAdd}
+        />
+      );
+
+    case "steps2":
+      return (
+        <StepsLayout
+          content={content}
+          theme={theme}
+          onContentChange={onContentChange}
+          stepCount={2}
+        />
+      );
+
+    case "steps3":
+      return (
+        <StepsLayout
+          content={content}
+          theme={theme}
+          onContentChange={onContentChange}
+          stepCount={3}
+        />
+      );
+
+    case "steps5":
+      return (
+        <StepsLayout
+          content={content}
+          theme={theme}
+          onContentChange={onContentChange}
+          stepCount={5}
+        />
+      );
+
+    case "imageGrid2":
+      return (
+        <ImageGridLayout
+          content={content}
+          theme={theme}
+          onContentChange={onContentChange}
+          onImageReplace={onImageReplace}
+          onChartAdd={onChartAdd}
+          gridCount={2}
+        />
+      );
+
+    case "imageGrid4":
+      return (
+        <ImageGridLayout
+          content={content}
+          theme={theme}
+          onContentChange={onContentChange}
+          onImageReplace={onImageReplace}
+          onChartAdd={onChartAdd}
+          gridCount={4}
+        />
+      );
+
+    case "imageGrid6":
+      return (
+        <ImageGridLayout
+          content={content}
+          theme={theme}
+          onContentChange={onContentChange}
+          onImageReplace={onImageReplace}
+          onChartAdd={onChartAdd}
+          gridCount={6}
         />
       );
 

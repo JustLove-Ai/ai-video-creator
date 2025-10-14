@@ -6,7 +6,7 @@ import { Prisma } from "@prisma/client";
 import { openai } from "@/lib/openai";
 
 /**
- * Generate image using DALL-E
+ * Generate image using gpt-image-1 (GPT-4o native image generation)
  * Returns base64 encoded image data suitable for Remotion
  */
 export async function generateImage(prompt: string, sceneId?: string): Promise<{
@@ -14,14 +14,14 @@ export async function generateImage(prompt: string, sceneId?: string): Promise<{
   b64_json?: string;
 }> {
   try {
-    console.log('Generating image with prompt:', prompt.substring(0, 50) + '...');
+    console.log('Generating image with gpt-image-1:', prompt.substring(0, 50) + '...');
 
+    // gpt-image-1 always returns b64_json format automatically
     const response = await openai.images.generate({
-      model: "dall-e-3",
+      model: "gpt-image-1",
       prompt,
-      n: 1,
       size: "1024x1024",
-      response_format: "b64_json",
+      n: 1,
     });
 
     if (!response.data || response.data.length === 0) {
@@ -31,10 +31,12 @@ export async function generateImage(prompt: string, sceneId?: string): Promise<{
     const imageData = response.data[0];
     const url = `data:image/png;base64,${imageData.b64_json}`;
 
-    console.log('Image generated successfully');
+    console.log('Image generated successfully with gpt-image-1');
 
     // Save to database if sceneId provided
     if (sceneId) {
+      const scene = await prisma.scene.findUnique({ where: { id: sceneId } });
+
       await prisma.scene.update({
         where: { id: sceneId },
         data: {
@@ -42,6 +44,22 @@ export async function generateImage(prompt: string, sceneId?: string): Promise<{
           imagePrompt: prompt,
         },
       });
+
+      // Save to media library (GeneratedAsset)
+      if (scene) {
+        await prisma.generatedAsset.create({
+          data: {
+            projectId: scene.projectId,
+            sceneId,
+            type: "image",
+            url,
+            prompt,
+            model: "gpt-image-1",
+            dimensions: { width: 1024, height: 1024 } as Prisma.InputJsonValue,
+          },
+        });
+      }
+
       revalidatePath("/");
     }
 
@@ -530,4 +548,232 @@ export async function importUserScript(
     console.error("Error in importUserScript:", error);
     throw new Error(error instanceof Error ? error.message : "Failed to import script");
   }
+}
+
+// Progress tracking store (in-memory)
+const beautifyProgress = new Map<string, { current: number; total: number; message: string }>();
+
+/**
+ * Get beautification progress for a project
+ */
+export async function getBeautifyProgress(projectId: string): Promise<{ current: number; total: number; message: string } | null> {
+  return beautifyProgress.get(projectId) || null;
+}
+
+/**
+ * Beautify all slides in a project
+ * - Fix titles (remove "Scene 1" etc)
+ * - Optimize content (not too wordy, not just copying narration)
+ * - Generate images for ALL slides
+ * - Choose better layouts that work with images
+ * @param projectId - The project ID
+ */
+export async function beautifySlides(
+  projectId: string
+): Promise<void> {
+  try {
+    console.log('Starting slide beautification for project:', projectId);
+
+    // Get all scenes
+    const scenes = await prisma.scene.findMany({
+      where: { projectId },
+      orderBy: { order: "asc" },
+    });
+
+    const total = scenes.length;
+
+    for (let i = 0; i < scenes.length; i++) {
+      const scene = scenes[i];
+      const sceneNum = i + 1;
+
+      // Update progress
+      beautifyProgress.set(projectId, {
+        current: sceneNum,
+        total,
+        message: `Beautifying slide ${sceneNum}/${total}...`
+      });
+
+      console.log(`Beautifying slide ${sceneNum}/${total}...`);
+
+      // Step 1: Optimize slide content with AI
+      const optimizedContent = await optimizeSlideContent(scene);
+
+      // Step 2: Generate image based on content
+      beautifyProgress.set(projectId, {
+        current: sceneNum,
+        total,
+        message: `Generating image for slide ${sceneNum}/${total}...`
+      });
+      console.log(`Generating image for slide ${sceneNum}/${total}...`);
+      const imagePrompt = generateImagePrompt(optimizedContent);
+      const imageResult = await generateImage(imagePrompt);
+
+      // Save the base64 image to file system
+      const filename = `slide-${scene.id}-${Date.now()}.png`;
+
+      // Save image directly using fs (server-side)
+      const base64Data = imageResult.url.replace(/^data:image\/\w+;base64,/, "");
+      const buffer = Buffer.from(base64Data, "base64");
+
+      const { writeFile, mkdir } = await import("fs/promises");
+      const { join } = await import("path");
+      const imagesDir = join(process.cwd(), "public", "images");
+
+      // Ensure directory exists
+      await mkdir(imagesDir, { recursive: true });
+
+      const filepath = join(imagesDir, filename);
+      await writeFile(filepath, buffer);
+
+      const imageUrl = `/images/${filename}`;
+
+      // Step 3: Update scene in database
+      await prisma.scene.update({
+        where: { id: scene.id },
+        data: {
+          layout: optimizedContent.layout,
+          layoutContent: {
+            title: optimizedContent.title,
+            subtitle: optimizedContent.subtitle,
+            body: optimizedContent.body,
+            bulletPoints: optimizedContent.bulletPoints,
+            imageUrl: imageUrl,
+          } as Prisma.InputJsonValue,
+          imageUrl: imageUrl,
+          imagePrompt: imagePrompt,
+        },
+      });
+
+      // Step 4: Save to media library (GeneratedAsset)
+      await prisma.generatedAsset.create({
+        data: {
+          projectId,
+          sceneId: scene.id,
+          type: "image",
+          url: imageUrl,
+          prompt: imagePrompt,
+          model: "gpt-image-1",
+          dimensions: { width: 1024, height: 1024 } as Prisma.InputJsonValue,
+        },
+      });
+
+      console.log(`Slide ${sceneNum}/${total} beautified successfully`);
+    }
+
+    // Final progress update
+    beautifyProgress.set(projectId, {
+      current: total,
+      total,
+      message: 'All slides beautified!'
+    });
+
+    console.log('All slides beautified!');
+
+    // Clean up progress after 5 seconds
+    setTimeout(() => {
+      beautifyProgress.delete(projectId);
+    }, 5000);
+
+    revalidatePath("/");
+  } catch (error) {
+    console.error("Error beautifying slides:", error);
+    beautifyProgress.delete(projectId);
+    throw new Error(error instanceof Error ? error.message : "Failed to beautify slides");
+  }
+}
+
+/**
+ * Optimize slide content using AI
+ */
+async function optimizeSlideContent(scene: any): Promise<{
+  title: string;
+  subtitle?: string;
+  body?: string;
+  bulletPoints?: string[];
+  layout: string;
+}> {
+  const currentContent = scene.layoutContent as any;
+  const narration = scene.content;
+
+  const prompt = `You are a professional slide designer. Optimize this slide for maximum impact.
+
+CURRENT SLIDE:
+Title: ${currentContent?.title || 'Scene ' + scene.order}
+Narration: ${narration}
+Current Content: ${JSON.stringify(currentContent)}
+
+YOUR TASK:
+1. Create an ENGAGING, descriptive title (NOT "Scene 1", "Introduction", etc.)
+2. Keep content CONCISE - don't just copy the narration word-for-word
+3. Use bullet points for key takeaways (3-5 points max)
+4. Choose the BEST layout for this content
+
+LAYOUT OPTIONS:
+- cover: Opening/closing slides (title + subtitle only)
+- imageLeft: Image on left (40%), text on right (60%) - good for concepts
+- imageRight: Image on right (40%), text on left (60%) - good for processes
+- imageBullets: Image top, bullet points below - best for listicles
+- titleBody: Simple title + paragraph - for explanations
+
+CONTENT RULES:
+✅ DO: Create punchy, descriptive titles like "3 Steps to Launch Your Business"
+✅ DO: Extract KEY points from narration, not verbatim text
+✅ DO: Keep body text under 100 characters
+✅ DO: Choose layouts that highlight images
+
+❌ DON'T: Use generic titles like "Scene 1", "Introduction", "Next Steps"
+❌ DON'T: Copy entire narration to body text
+❌ DON'T: Make slides too wordy
+
+Return JSON ONLY:
+{
+  "title": "Engaging, specific title",
+  "subtitle": "Optional subtitle for context",
+  "body": "Brief summary (if needed)",
+  "bulletPoints": ["Key point 1", "Key point 2", "Key point 3"],
+  "layout": "imageLeft|imageRight|imageBullets|titleBody|cover"
+}`;
+
+  const response = await openai.chat.completions.create({
+    model: "gpt-4o",
+    messages: [
+      {
+        role: "system",
+        content: "You are a professional slide designer who creates visually stunning, concise slides. Return ONLY valid JSON.",
+      },
+      { role: "user", content: prompt },
+    ],
+    temperature: 0.7,
+    response_format: { type: "json_object" },
+  });
+
+  const content = response.choices[0].message.content;
+  if (!content) throw new Error("No content generated");
+
+  return JSON.parse(content);
+}
+
+/**
+ * Generate a photorealistic image prompt based on slide content
+ * The image should convey the MEANING/CONCEPT, not literally depict the text
+ */
+function generateImagePrompt(content: {
+  title: string;
+  subtitle?: string;
+  body?: string;
+  bulletPoints?: string[];
+}): string {
+  // Extract the core concept/theme from the content
+  const parts = [content.title];
+  if (content.subtitle) parts.push(content.subtitle);
+  if (content.body) parts.push(content.body);
+
+  const context = parts.join(' ');
+
+  // Create a photorealistic prompt that captures the essence/feeling
+  // Using gpt-image-1's enhanced photorealism capabilities
+  return `Photorealistic, high-resolution image that conceptually represents: ${context}.
+Professional photography, sharp focus, natural lighting, authentic real-world scene.
+Convey the emotion and meaning rather than literal text.
+Cinematic composition, modern aesthetic, 4K quality, vibrant but natural colors.`;
 }

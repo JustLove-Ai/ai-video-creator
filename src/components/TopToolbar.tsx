@@ -21,7 +21,8 @@ import {
   Pencil,
   BarChart3,
   Save,
-  Sparkles
+  Sparkles,
+  Wand2
 } from "lucide-react";
 import { RightPanelType } from "@/types";
 
@@ -36,6 +37,7 @@ interface TopToolbarProps {
   onTitleUpdate: (newTitle: string) => void;
   onPreview: () => void;
   onExport: () => void;
+  onBeautify: () => void;
 }
 
 const tools = [
@@ -59,6 +61,7 @@ export function TopToolbar({
   onTitleUpdate,
   onPreview,
   onExport,
+  onBeautify,
 }: TopToolbarProps) {
   const [videoTitle, setVideoTitle] = useState(projectTitle);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -200,6 +203,15 @@ export function TopToolbar({
         <Button variant="outline" size="sm" className="gap-2">
           <Save className="h-4 w-4" />
           Save
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-2 border-purple-500/50 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950"
+          onClick={onBeautify}
+        >
+          <Wand2 className="h-4 w-4" />
+          Beautify Slides
         </Button>
         <Button variant="outline" size="sm" className="gap-2" onClick={onPreview}>
           <Eye className="h-4 w-4" />

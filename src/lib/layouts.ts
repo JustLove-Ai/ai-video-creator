@@ -29,6 +29,7 @@ export function parseScriptToLayout(
         title: sentences[0] || "Untitled Slide",
         body: sentences.slice(1).join(". ") || "Add your content here",
         imageUrl: "",
+        imageBleed: true, // Default to true
       };
 
     case "imageBullets":
@@ -39,6 +40,7 @@ export function parseScriptToLayout(
             ? sentences.slice(1, 6)
             : ["Point 1", "Point 2", "Point 3"],
         imageUrl: "",
+        imageBleed: true, // Default to true
       };
 
     case "fullImage":
@@ -46,6 +48,7 @@ export function parseScriptToLayout(
         title: sentences[0] || "Untitled Slide",
         subtitle: sentences.slice(1, 2).join(". ") || "",
         imageUrl: "",
+        imageBleed: true, // Default to true
       };
 
     case "twoColumn":
@@ -64,6 +67,75 @@ export function parseScriptToLayout(
 
     case "blank":
       return {};
+
+    case "quote":
+      return {
+        quote: sentences.join(". ") || "Enter your quote here",
+        quoteAuthor: "Author Name",
+        imageUrl: "",
+        imageBleed: true,
+      };
+
+    case "steps2":
+      return {
+        title: sentences[0] || "Process Steps",
+        steps: [
+          { title: "Step 1", description: sentences[1] || "First step description" },
+          { title: "Step 2", description: sentences[2] || "Second step description" },
+        ],
+      };
+
+    case "steps3":
+      return {
+        title: sentences[0] || "Process Steps",
+        steps: [
+          { title: "Step 1", description: sentences[1] || "First step description" },
+          { title: "Step 2", description: sentences[2] || "Second step description" },
+          { title: "Step 3", description: sentences[3] || "Third step description" },
+        ],
+      };
+
+    case "steps5":
+      return {
+        title: sentences[0] || "Process Steps",
+        steps: [
+          { title: "Step 1", description: sentences[1] || "First step" },
+          { title: "Step 2", description: sentences[2] || "Second step" },
+          { title: "Step 3", description: sentences[3] || "Third step" },
+          { title: "Step 4", description: sentences[4] || "Fourth step" },
+          { title: "Step 5", description: sentences[5] || "Fifth step" },
+        ],
+      };
+
+    case "imageGrid2":
+      return {
+        title: sentences[0] || "Image Gallery",
+        imageUrl: "",
+        imageUrl2: "",
+        imageBleed: true,
+      };
+
+    case "imageGrid4":
+      return {
+        title: sentences[0] || "Image Gallery",
+        imageUrl: "",
+        imageUrl2: "",
+        imageUrl3: "",
+        imageUrl4: "",
+        imageBleed: true,
+      };
+
+    case "imageGrid6":
+      return {
+        title: sentences[0] || "Image Gallery",
+        imageUrl: "",
+        imageUrl2: "",
+        imageUrl3: "",
+        imageUrl4: "",
+        imageUrl5: "",
+        imageUrl6: "",
+        imageBleed: true,
+      };
 
     default:
       return {
@@ -85,6 +157,13 @@ export function getLayoutName(layoutType: LayoutType): string {
     blank: "Blank",
     centeredChart: "Centered Chart",
     comparison: "Comparison",
+    quote: "Quote",
+    steps2: "2 Steps",
+    steps3: "3 Steps",
+    steps5: "5 Steps",
+    imageGrid2: "2 Images",
+    imageGrid4: "4 Images",
+    imageGrid6: "6 Images",
   };
   return names[layoutType];
 }
@@ -102,6 +181,13 @@ export function getLayoutDescription(layoutType: LayoutType): string {
     blank: "Start from scratch",
     centeredChart: "Centered chart with title",
     comparison: "Side-by-side comparison",
+    quote: "Large quote with author",
+    steps2: "Two-step process",
+    steps3: "Three-step process",
+    steps5: "Five-step process",
+    imageGrid2: "2-image grid layout",
+    imageGrid4: "4-image grid layout",
+    imageGrid6: "6-image grid layout",
   };
   return descriptions[layoutType];
 }

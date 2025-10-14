@@ -25,6 +25,13 @@ const layouts: LayoutType[] = [
   "fullImage",
   "twoColumn",
   "titleBody",
+  "quote",
+  "steps2",
+  "steps3",
+  "steps5",
+  "imageGrid2",
+  "imageGrid4",
+  "imageGrid6",
   "blank",
 ];
 
@@ -139,6 +146,76 @@ export function LayoutPanel({ currentLayout, currentContent, onLayoutSelect, onC
                   {layout === "blank" && (
                     <div className="h-full flex items-center justify-center">
                       <div className="text-xs text-foreground/30">Blank</div>
+                    </div>
+                  )}
+                  {layout === "quote" && (
+                    <div className="h-full flex flex-col items-center justify-center gap-1 p-2">
+                      <div className="w-1 h-1 bg-foreground/30 rounded-full"></div>
+                      <div className="w-full h-1 bg-foreground/60 rounded"></div>
+                      <div className="w-4/5 h-1 bg-foreground/60 rounded"></div>
+                      <div className="w-1/2 h-0.5 bg-foreground/40 rounded mt-1"></div>
+                    </div>
+                  )}
+                  {layout === "steps2" && (
+                    <div className="h-full flex gap-1 items-center p-1">
+                      <div className="flex-1 flex flex-col items-center gap-0.5">
+                        <div className="w-3 h-3 rounded-full bg-foreground/60"></div>
+                        <div className="w-full h-0.5 bg-foreground/40 rounded"></div>
+                      </div>
+                      <div className="flex-1 flex flex-col items-center gap-0.5">
+                        <div className="w-3 h-3 rounded-full bg-foreground/60"></div>
+                        <div className="w-full h-0.5 bg-foreground/40 rounded"></div>
+                      </div>
+                    </div>
+                  )}
+                  {layout === "steps3" && (
+                    <div className="h-full flex gap-1 items-center p-1">
+                      <div className="flex-1 flex flex-col items-center gap-0.5">
+                        <div className="w-2.5 h-2.5 rounded-full bg-foreground/60"></div>
+                        <div className="w-full h-0.5 bg-foreground/40 rounded"></div>
+                      </div>
+                      <div className="flex-1 flex flex-col items-center gap-0.5">
+                        <div className="w-2.5 h-2.5 rounded-full bg-foreground/60"></div>
+                        <div className="w-full h-0.5 bg-foreground/40 rounded"></div>
+                      </div>
+                      <div className="flex-1 flex flex-col items-center gap-0.5">
+                        <div className="w-2.5 h-2.5 rounded-full bg-foreground/60"></div>
+                        <div className="w-full h-0.5 bg-foreground/40 rounded"></div>
+                      </div>
+                    </div>
+                  )}
+                  {layout === "steps5" && (
+                    <div className="h-full flex gap-0.5 items-center p-1">
+                      {[1, 2, 3, 4, 5].map((i) => (
+                        <div key={i} className="flex-1 flex flex-col items-center gap-0.5">
+                          <div className="w-2 h-2 rounded-full bg-foreground/60"></div>
+                          <div className="w-full h-0.5 bg-foreground/40 rounded"></div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {layout === "imageGrid2" && (
+                    <div className="h-full grid grid-cols-2 gap-0.5 p-1">
+                      <div className="bg-foreground/30 rounded"></div>
+                      <div className="bg-foreground/30 rounded"></div>
+                    </div>
+                  )}
+                  {layout === "imageGrid4" && (
+                    <div className="h-full grid grid-cols-2 grid-rows-2 gap-0.5 p-1">
+                      <div className="bg-foreground/30 rounded"></div>
+                      <div className="bg-foreground/30 rounded"></div>
+                      <div className="bg-foreground/30 rounded"></div>
+                      <div className="bg-foreground/30 rounded"></div>
+                    </div>
+                  )}
+                  {layout === "imageGrid6" && (
+                    <div className="h-full grid grid-cols-3 grid-rows-2 gap-0.5 p-1">
+                      <div className="bg-foreground/30 rounded"></div>
+                      <div className="bg-foreground/30 rounded"></div>
+                      <div className="bg-foreground/30 rounded"></div>
+                      <div className="bg-foreground/30 rounded"></div>
+                      <div className="bg-foreground/30 rounded"></div>
+                      <div className="bg-foreground/30 rounded"></div>
                     </div>
                   )}
                 </div>
