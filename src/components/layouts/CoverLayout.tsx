@@ -1,16 +1,22 @@
 "use client";
 
-import { Theme, LayoutContent } from "@/types";
+import { Theme, LayoutContent, AnimationConfig } from "@/types";
 import { EditableText } from "@/components/canvas/EditableText";
 import { getBackgroundStyle } from "@/lib/themes";
+import { getElementAnimation } from "@/lib/animationHelpers";
 
 interface CoverLayoutProps {
   content: LayoutContent;
   theme: Theme;
   onContentChange: (content: LayoutContent) => void;
+  animationConfig?: AnimationConfig;
+  onAnimationPanelOpen?: (element: keyof AnimationConfig) => void;
 }
 
-export function CoverLayout({ content, theme, onContentChange }: CoverLayoutProps) {
+export function CoverLayout({ content, theme, onContentChange, animationConfig, onAnimationPanelOpen }: CoverLayoutProps) {
+  // Get animations with defaults
+  const titleAnimation = getElementAnimation(animationConfig, "title");
+  const subtitleAnimation = getElementAnimation(animationConfig, "subtitle");
   return (
     <div
       className="w-full h-full flex flex-col items-center justify-center text-center"
@@ -33,6 +39,8 @@ export function CoverLayout({ content, theme, onContentChange }: CoverLayoutProp
             lineHeight: 1.2,
           }}
           align="center"
+          animation={titleAnimation}
+          onElementClick={() => onAnimationPanelOpen?.("title")}
         />
       )}
       {content.showTitle !== false && content.showSubtitle !== false && (
@@ -53,6 +61,8 @@ export function CoverLayout({ content, theme, onContentChange }: CoverLayoutProp
           }}
           align="center"
           multiline
+          animation={subtitleAnimation}
+          onElementClick={() => onAnimationPanelOpen?.("subtitle")}
         />
       )}
     </div>

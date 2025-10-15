@@ -1,9 +1,10 @@
 "use client";
 
-import { Theme, LayoutContent } from "@/types";
+import { Theme, LayoutContent, AnimationConfig } from "@/types";
 import { EditableText } from "@/components/canvas/EditableText";
 import { EditableMediaSlot } from "@/components/canvas/EditableMediaSlot";
 import { getBackgroundStyle } from "@/lib/themes";
+import { getElementAnimation } from "@/lib/animationHelpers";
 
 interface ImageLeftLayoutProps {
   content: LayoutContent;
@@ -11,6 +12,8 @@ interface ImageLeftLayoutProps {
   onContentChange: (content: LayoutContent) => void;
   onImageReplace: () => void;
   onChartAdd: () => void;
+  animationConfig?: AnimationConfig;
+  onAnimationPanelOpen?: (element: keyof AnimationConfig) => void;
 }
 
 export function ImageLeftLayout({
@@ -19,8 +22,15 @@ export function ImageLeftLayout({
   onContentChange,
   onImageReplace,
   onChartAdd,
+  animationConfig,
+  onAnimationPanelOpen,
 }: ImageLeftLayoutProps) {
   const hasBleed = content.imageBleed ?? true; // Default to true
+
+  // Get animations with defaults
+  const titleAnimation = getElementAnimation(animationConfig, "title");
+  const bodyAnimation = getElementAnimation(animationConfig, "body");
+  const imageAnimation = getElementAnimation(animationConfig, "image");
 
   if (hasBleed) {
     // Bleed mode: Image on left edge, title on right above text
@@ -40,6 +50,8 @@ export function ImageLeftLayout({
             onChartAdd={onChartAdd}
             className="w-full h-full"
             bleed={true}
+            animation={imageAnimation}
+            onElementClick={() => onAnimationPanelOpen?.("image")}
           />
         </div>
 
@@ -63,6 +75,8 @@ export function ImageLeftLayout({
                 color: theme.typography.titleColor,
                 lineHeight: 1.2,
               }}
+              animation={titleAnimation}
+              onElementClick={() => onAnimationPanelOpen?.("title")}
             />
           )}
           {content.showBody !== false && (
@@ -78,6 +92,8 @@ export function ImageLeftLayout({
                 lineHeight: 1.6,
               }}
               multiline
+              animation={bodyAnimation}
+              onElementClick={() => onAnimationPanelOpen?.("body")}
             />
           )}
         </div>
@@ -105,6 +121,8 @@ export function ImageLeftLayout({
           className="w-full h-full"
           aspectRatio="4/3"
           bleed={false}
+          animation={imageAnimation}
+          onElementClick={() => onAnimationPanelOpen?.("image")}
         />
       </div>
 
@@ -122,6 +140,8 @@ export function ImageLeftLayout({
               color: theme.typography.titleColor,
               lineHeight: 1.2,
             }}
+            animation={titleAnimation}
+            onElementClick={() => onAnimationPanelOpen?.("title")}
           />
         )}
         {content.showBody !== false && (
@@ -137,6 +157,8 @@ export function ImageLeftLayout({
               lineHeight: 1.6,
             }}
             multiline
+            animation={bodyAnimation}
+            onElementClick={() => onAnimationPanelOpen?.("body")}
           />
         )}
       </div>

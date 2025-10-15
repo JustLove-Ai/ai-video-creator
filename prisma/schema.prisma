@@ -53,6 +53,9 @@ model Scene {
   // Theme override
   themeOverride   Json?    // Optional per-scene theme override
 
+  // Animation configuration
+  animationConfig Json?    // Per-element animation settings
+
   // Metadata
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt

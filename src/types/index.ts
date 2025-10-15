@@ -119,13 +119,54 @@ export interface Scene {
   layoutContent: LayoutContent;
   annotations: AnnotationElement[];
   themeOverride?: Partial<Theme>;
+  animationConfig?: AnimationConfig;  // Per-element animation settings
   imageUrl?: string;  // Base64 data URL for scene image
   audioUrl?: string;  // AI-generated TTS audio URL
   recordedAudioUrl?: string;  // User-recorded audio URL (takes priority over audioUrl)
 }
 
+// Animation System
+export type AnimationType =
+  | "fade"
+  | "slideInLeft"
+  | "slideInRight"
+  | "slideInUp"
+  | "slideInDown"
+  | "scaleIn"
+  | "rotateIn"
+  | "none";
+
+export interface ElementAnimation {
+  type: AnimationType;
+  duration: number; // in seconds
+  delay: number; // in seconds
+  easing: "linear" | "easeIn" | "easeOut" | "easeInOut" | "backOut" | "anticipate";
+}
+
+export interface AnimationConfig {
+  title?: ElementAnimation;
+  subtitle?: ElementAnimation;
+  body?: ElementAnimation;
+  image?: ElementAnimation;
+  leftColumn?: ElementAnimation;
+  rightColumn?: ElementAnimation;
+  bulletPoints?: ElementAnimation;
+}
+
+// Default animation presets
+export const DEFAULT_ANIMATIONS: Record<string, ElementAnimation> = {
+  fade: { type: "fade", duration: 0.6, delay: 0, easing: "easeOut" },
+  slideInLeft: { type: "slideInLeft", duration: 0.8, delay: 0, easing: "easeOut" },
+  slideInRight: { type: "slideInRight", duration: 0.8, delay: 0, easing: "easeOut" },
+  slideInUp: { type: "slideInUp", duration: 0.8, delay: 0, easing: "easeOut" },
+  slideInDown: { type: "slideInDown", duration: 0.8, delay: 0, easing: "easeOut" },
+  scaleIn: { type: "scaleIn", duration: 0.6, delay: 0, easing: "backOut" },
+  rotateIn: { type: "rotateIn", duration: 0.8, delay: 0, easing: "easeOut" },
+  none: { type: "none", duration: 0, delay: 0, easing: "linear" },
+};
+
 // Panel Types
-export type RightPanelType = "layout" | "theme" | "imageUpload" | "charts" | "videoSettings" | null;
+export type RightPanelType = "layout" | "theme" | "animation" | "imageUpload" | "charts" | "videoSettings" | null;
 
 // Tool Types (extended)
 export type ToolType =
@@ -138,4 +179,5 @@ export type ToolType =
   | "background"
   | "layout"
   | "theme"
+  | "animation"
   | "annotations";

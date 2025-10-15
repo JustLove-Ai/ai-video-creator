@@ -1,6 +1,6 @@
 "use client";
 
-import { Theme, LayoutContent, LayoutType } from "@/types";
+import { Theme, LayoutContent, LayoutType, AnimationConfig } from "@/types";
 import { CoverLayout } from "@/components/layouts/CoverLayout";
 import { ImageLeftLayout } from "@/components/layouts/ImageLeftLayout";
 import { ImageRightLayout } from "@/components/layouts/ImageRightLayout";
@@ -22,6 +22,7 @@ interface LayoutRendererProps {
   onContentChange: (content: LayoutContent) => void;
   onImageReplace: () => void;
   onChartAdd: () => void;
+  animationConfig?: AnimationConfig;
 }
 
 export function LayoutRenderer({
@@ -31,10 +32,11 @@ export function LayoutRenderer({
   onContentChange,
   onImageReplace,
   onChartAdd,
+  animationConfig,
 }: LayoutRendererProps) {
   switch (layoutType) {
     case "cover":
-      return <CoverLayout content={content} theme={theme} onContentChange={onContentChange} />;
+      return <CoverLayout content={content} theme={theme} onContentChange={onContentChange} animationConfig={animationConfig} />;
 
     case "imageLeft":
       return (
@@ -44,6 +46,7 @@ export function LayoutRenderer({
           onContentChange={onContentChange}
           onImageReplace={onImageReplace}
           onChartAdd={onChartAdd}
+          animationConfig={animationConfig}
         />
       );
 
@@ -55,6 +58,7 @@ export function LayoutRenderer({
           onContentChange={onContentChange}
           onImageReplace={onImageReplace}
           onChartAdd={onChartAdd}
+          animationConfig={animationConfig}
         />
       );
 
@@ -66,6 +70,7 @@ export function LayoutRenderer({
           onContentChange={onContentChange}
           onImageReplace={onImageReplace}
           onChartAdd={onChartAdd}
+          animationConfig={animationConfig}
         />
       );
 
@@ -77,14 +82,15 @@ export function LayoutRenderer({
           onContentChange={onContentChange}
           onImageReplace={onImageReplace}
           onChartAdd={onChartAdd}
+          animationConfig={animationConfig}
         />
       );
 
     case "twoColumn":
-      return <TwoColumnLayout content={content} theme={theme} onContentChange={onContentChange} />;
+      return <TwoColumnLayout content={content} theme={theme} onContentChange={onContentChange} animationConfig={animationConfig} />;
 
     case "titleBody":
-      return <TitleBodyLayout content={content} theme={theme} onContentChange={onContentChange} />;
+      return <TitleBodyLayout content={content} theme={theme} onContentChange={onContentChange} animationConfig={animationConfig} />;
 
     case "blank":
       return <BlankLayout theme={theme} />;

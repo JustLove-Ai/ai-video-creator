@@ -1,16 +1,21 @@
 "use client";
 
-import { Theme, LayoutContent } from "@/types";
+import { Theme, LayoutContent, AnimationConfig } from "@/types";
 import { EditableText } from "@/components/canvas/EditableText";
 import { getBackgroundStyle } from "@/lib/themes";
+import { getElementAnimation } from "@/lib/animationHelpers";
 
 interface TitleBodyLayoutProps {
   content: LayoutContent;
   theme: Theme;
   onContentChange: (content: LayoutContent) => void;
+  animationConfig?: AnimationConfig;
+  onAnimationPanelOpen?: (element: keyof AnimationConfig) => void;
 }
 
-export function TitleBodyLayout({ content, theme, onContentChange }: TitleBodyLayoutProps) {
+export function TitleBodyLayout({ content, theme, onContentChange, animationConfig, onAnimationPanelOpen }: TitleBodyLayoutProps) {
+  const titleAnimation = getElementAnimation(animationConfig, "title");
+  const bodyAnimation = getElementAnimation(animationConfig, "body");
   return (
     <div
       className="w-full h-full flex flex-col justify-center"
@@ -32,6 +37,8 @@ export function TitleBodyLayout({ content, theme, onContentChange }: TitleBodyLa
             color: theme.typography.titleColor,
             lineHeight: 1.2,
           }}
+          animation={titleAnimation}
+          onElementClick={() => onAnimationPanelOpen?.("title")}
         />
       )}
       {content.showBody !== false && (
@@ -47,6 +54,8 @@ export function TitleBodyLayout({ content, theme, onContentChange }: TitleBodyLa
             lineHeight: 1.6,
           }}
           multiline
+          animation={bodyAnimation}
+          onElementClick={() => onAnimationPanelOpen?.("body")}
         />
       )}
     </div>

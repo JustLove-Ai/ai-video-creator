@@ -19,6 +19,7 @@ interface VideoCanvasProps {
   onImageReplace: () => void;
   onChartAdd: () => void;
   isTimelineExpanded?: boolean;
+  animationKey?: number; // Key to force animation replay
 }
 
 export function VideoCanvas({
@@ -30,6 +31,7 @@ export function VideoCanvas({
   onImageReplace,
   onChartAdd,
   isTimelineExpanded = false,
+  animationKey = 0,
 }: VideoCanvasProps) {
   const [annotationTool, setAnnotationTool] = useState<AnnotationType | null>(null);
   const [annotationColor, setAnnotationColor] = useState("#000000");
@@ -64,12 +66,14 @@ export function VideoCanvas({
       >
         {/* Layout Content */}
         <LayoutRenderer
+          key={animationKey} // Force re-render to replay animations
           layoutType={activeScene.layout}
           content={activeScene.layoutContent}
           theme={effectiveTheme}
           onContentChange={handleContentChange}
           onImageReplace={onImageReplace}
           onChartAdd={onChartAdd}
+          animationConfig={activeScene.animationConfig}
         />
 
         {/* Annotation Layer (always visible if annotations exist, interactive only in annotation mode) */}

@@ -1,8 +1,9 @@
 "use client";
 
-import { Theme, LayoutContent } from "@/types";
+import { Theme, LayoutContent, AnimationConfig } from "@/types";
 import { EditableText } from "@/components/canvas/EditableText";
 import { EditableMediaSlot } from "@/components/canvas/EditableMediaSlot";
+import { getElementAnimation } from "@/lib/animationHelpers";
 
 interface FullImageLayoutProps {
   content: LayoutContent;
@@ -10,6 +11,8 @@ interface FullImageLayoutProps {
   onContentChange: (content: LayoutContent) => void;
   onImageReplace: () => void;
   onChartAdd: () => void;
+  animationConfig?: AnimationConfig;
+  onAnimationPanelOpen?: (element: keyof AnimationConfig) => void;
 }
 
 export function FullImageLayout({
@@ -18,7 +21,12 @@ export function FullImageLayout({
   onContentChange,
   onImageReplace,
   onChartAdd,
+  animationConfig,
+  onAnimationPanelOpen,
 }: FullImageLayoutProps) {
+  const titleAnimation = getElementAnimation(animationConfig, "title");
+  const subtitleAnimation = getElementAnimation(animationConfig, "subtitle");
+  const imageAnimation = getElementAnimation(animationConfig, "image");
   return (
     <div className="w-full h-full relative">
       {/* Full Background Image/Chart */}
@@ -29,6 +37,8 @@ export function FullImageLayout({
         onChartAdd={onChartAdd}
         className="absolute inset-0 w-full h-full"
         bleed={true}
+        animation={imageAnimation}
+        onElementClick={() => onAnimationPanelOpen?.("image")}
       />
 
       {/* Text Overlay with gradient background */}
@@ -50,6 +60,8 @@ export function FullImageLayout({
               textShadow: "0 2px 8px rgba(0,0,0,0.5)",
             }}
             align="center"
+            animation={titleAnimation}
+            onElementClick={() => onAnimationPanelOpen?.("title")}
           />
         )}
         {content.showTitle !== false && content.showSubtitle !== false && (
@@ -71,6 +83,8 @@ export function FullImageLayout({
             }}
             align="center"
             multiline
+            animation={subtitleAnimation}
+            onElementClick={() => onAnimationPanelOpen?.("subtitle")}
           />
         )}
       </div>

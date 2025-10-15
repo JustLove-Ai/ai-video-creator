@@ -1,9 +1,10 @@
 "use client";
 
-import { Theme, LayoutContent } from "@/types";
+import { Theme, LayoutContent, AnimationConfig } from "@/types";
 import { EditableText } from "@/components/canvas/EditableText";
 import { EditableMediaSlot } from "@/components/canvas/EditableMediaSlot";
 import { getBackgroundStyle } from "@/lib/themes";
+import { getElementAnimation } from "@/lib/animationHelpers";
 import { Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -13,6 +14,8 @@ interface ImageBulletsLayoutProps {
   onContentChange: (content: LayoutContent) => void;
   onImageReplace: () => void;
   onChartAdd: () => void;
+  animationConfig?: AnimationConfig;
+  onAnimationPanelOpen?: (element: keyof AnimationConfig) => void;
 }
 
 export function ImageBulletsLayout({
@@ -21,7 +24,12 @@ export function ImageBulletsLayout({
   onContentChange,
   onImageReplace,
   onChartAdd,
+  animationConfig,
+  onAnimationPanelOpen,
 }: ImageBulletsLayoutProps) {
+  const titleAnimation = getElementAnimation(animationConfig, "title");
+  const imageAnimation = getElementAnimation(animationConfig, "image");
+  const bulletPointsAnimation = getElementAnimation(animationConfig, "bulletPoints");
   const bulletPoints = content.bulletPoints || ["Point 1", "Point 2", "Point 3"];
   const hasBleed = content.imageBleed;
 
@@ -63,6 +71,8 @@ export function ImageBulletsLayout({
               color: theme.typography.titleColor,
               lineHeight: 1.2,
             }}
+            animation={titleAnimation}
+            onElementClick={() => onAnimationPanelOpen?.("title")}
           />
         </div>
       )}
@@ -79,6 +89,8 @@ export function ImageBulletsLayout({
             className={hasBleed ? 'w-full h-full' : 'w-full'}
             aspectRatio={hasBleed ? undefined : "16/9"}
             bleed={hasBleed}
+            animation={imageAnimation}
+            onElementClick={() => onAnimationPanelOpen?.("image")}
           />
         </div>
 
@@ -108,6 +120,8 @@ export function ImageBulletsLayout({
                   color: theme.typography.bodyColor,
                   lineHeight: 1.5,
                 }}
+                animation={bulletPointsAnimation}
+                onElementClick={() => onAnimationPanelOpen?.("bulletPoints")}
               />
               {bulletPoints.length > 1 && (
                 <Button

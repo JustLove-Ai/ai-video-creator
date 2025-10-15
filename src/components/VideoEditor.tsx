@@ -9,13 +9,14 @@ import { VideoCanvas } from "./VideoCanvas";
 import { TimelinePanel } from "./TimelinePanel";
 import { LayoutPanel } from "./panels/LayoutPanel";
 import { ThemePanel } from "./panels/ThemePanel";
+import { AnimationPanel } from "./panels/AnimationPanel";
 import { ImageUploadPanel } from "./panels/ImageUploadPanel";
 import { ChartsPanel } from "./panels/ChartsPanel";
 import { VideoPreviewPanel } from "./panels/VideoPreviewPanel";
 import { VideoSettingsPanel } from "./panels/VideoSettingsPanel";
 import { ExportProgressModal } from "./panels/ExportProgressModal";
 import { BeautifySlidesModal } from "./modals/BeautifySlidesModal";
-import { Scene, RightPanelType, Theme, LayoutType, ChartData } from "@/types";
+import { Scene, RightPanelType, Theme, LayoutType, ChartData, AnimationConfig } from "@/types";
 import { themePresets, mergeTheme } from "@/lib/themes";
 import { parseScriptToLayout, preserveContentOnLayoutChange } from "@/lib/layouts";
 import { getProject, updateProject, type VideoProjectWithScenes } from "@/app/actions/projects";
@@ -59,6 +60,7 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
   const [exportError, setExportError] = useState<string>("");
   const [exportVideoUrl, setExportVideoUrl] = useState<string>("");
   const [showBeautifyModal, setShowBeautifyModal] = useState(false);
+  const [animationKey, setAnimationKey] = useState(0); // Force animation replay
 
   // Video and Audio Settings
   const [videoSettings, setVideoSettings] = useState<VideoSettings>({
@@ -105,6 +107,7 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
           layoutContent: s.layoutContent as unknown as Scene["layoutContent"],
           annotations: (s.annotations as unknown as Scene["annotations"]) || [],
           themeOverride: s.themeOverride as unknown as Partial<Theme> | undefined,
+          animationConfig: s.animationConfig as unknown as AnimationConfig | undefined,
         }));
 
         setProject(loadedProject);
@@ -325,6 +328,31 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
     });
   };
 
+  // Handle animation change
+  const handleAnimationChange = (config: AnimationConfig) => {
+    if (!activeScene) return;
+
+    setScenes((prev) =>
+      prev.map((s) =>
+        s.id === activeSceneId ? { ...s, animationConfig: config } : s
+      )
+    );
+
+    // Force animation replay by incrementing key
+    setAnimationKey(prev => prev + 1);
+
+    // Save to database
+    startTransition(async () => {
+      try {
+        await updateScene(activeSceneId, {
+          animationConfig: config as any,
+        });
+      } catch (error) {
+        console.error("Failed to update scene animations:", error);
+      }
+    });
+  };
+
   // Handle project title update
   const handleTitleUpdate = (newTitle: string) => {
     if (!project) return;
@@ -355,6 +383,7 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
         layoutContent: s.layoutContent as unknown as Scene["layoutContent"],
         annotations: (s.annotations as unknown as Scene["annotations"]) || [],
         themeOverride: s.themeOverride as unknown as Partial<Theme> | undefined,
+        animationConfig: s.animationConfig as unknown as AnimationConfig | undefined,
       }));
 
       setScenes(convertedScenes);
@@ -427,6 +456,7 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
               onImageReplace={() => setRightPanel("imageUpload")}
               onChartAdd={() => setRightPanel("charts")}
               isTimelineExpanded={isTimelineExpanded}
+              animationKey={animationKey}
             />
           </motion.div>
 
@@ -469,6 +499,15 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
               currentTheme={activeScene?.themeOverride ? mergeTheme(activeTheme, activeScene.themeOverride) : activeTheme}
               onThemeChange={handleThemeChange}
               onClose={() => setRightPanel(null)}
+            />
+          )}
+          {rightPanel === "animation" && activeScene && (
+            <AnimationPanel
+              currentAnimationConfig={activeScene.animationConfig}
+              layoutType={activeScene.layout}
+              onAnimationChange={handleAnimationChange}
+              onClose={() => setRightPanel(null)}
+              onPreview={() => setAnimationKey(prev => prev + 1)}
             />
           )}
           {rightPanel === "imageUpload" && activeScene && (

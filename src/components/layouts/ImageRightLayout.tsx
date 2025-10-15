@@ -1,9 +1,10 @@
 "use client";
 
-import { Theme, LayoutContent } from "@/types";
+import { Theme, LayoutContent, AnimationConfig } from "@/types";
 import { EditableText } from "@/components/canvas/EditableText";
 import { EditableMediaSlot } from "@/components/canvas/EditableMediaSlot";
 import { getBackgroundStyle } from "@/lib/themes";
+import { getElementAnimation } from "@/lib/animationHelpers";
 
 interface ImageRightLayoutProps {
   content: LayoutContent;
@@ -11,6 +12,8 @@ interface ImageRightLayoutProps {
   onContentChange: (content: LayoutContent) => void;
   onImageReplace: () => void;
   onChartAdd: () => void;
+  animationConfig?: AnimationConfig;
+  onAnimationPanelOpen?: (element: keyof AnimationConfig) => void;
 }
 
 export function ImageRightLayout({
@@ -19,8 +22,15 @@ export function ImageRightLayout({
   onContentChange,
   onImageReplace,
   onChartAdd,
+  animationConfig,
+  onAnimationPanelOpen,
 }: ImageRightLayoutProps) {
   const hasBleed = content.imageBleed ?? true; // Default to true
+
+  // Get animations with defaults
+  const titleAnimation = getElementAnimation(animationConfig, "title");
+  const bodyAnimation = getElementAnimation(animationConfig, "body");
+  const imageAnimation = getElementAnimation(animationConfig, "image");
 
   if (hasBleed) {
     // Bleed mode: Image on right edge, title on left above text
@@ -51,6 +61,8 @@ export function ImageRightLayout({
                 color: theme.typography.titleColor,
                 lineHeight: 1.2,
               }}
+              animation={titleAnimation}
+              onElementClick={() => onAnimationPanelOpen?.("title")}
             />
           )}
           {content.showBody !== false && (
@@ -66,6 +78,8 @@ export function ImageRightLayout({
                 lineHeight: 1.6,
               }}
               multiline
+              animation={bodyAnimation}
+              onElementClick={() => onAnimationPanelOpen?.("body")}
             />
           )}
         </div>
@@ -79,6 +93,8 @@ export function ImageRightLayout({
             onChartAdd={onChartAdd}
             className="w-full h-full"
             bleed={true}
+            animation={imageAnimation}
+            onElementClick={() => onAnimationPanelOpen?.("image")}
           />
         </div>
       </div>
@@ -109,6 +125,8 @@ export function ImageRightLayout({
               color: theme.typography.titleColor,
               lineHeight: 1.2,
             }}
+            animation={titleAnimation}
+            onElementClick={() => onAnimationPanelOpen?.("title")}
           />
         )}
         {content.showBody !== false && (
@@ -124,6 +142,8 @@ export function ImageRightLayout({
               lineHeight: 1.6,
             }}
             multiline
+            animation={bodyAnimation}
+            onElementClick={() => onAnimationPanelOpen?.("body")}
           />
         )}
       </div>
@@ -138,6 +158,8 @@ export function ImageRightLayout({
           className="w-full h-full"
           aspectRatio="4/3"
           bleed={false}
+          animation={imageAnimation}
+          onElementClick={() => onAnimationPanelOpen?.("image")}
         />
       </div>
     </div>

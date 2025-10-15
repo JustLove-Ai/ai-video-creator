@@ -14,7 +14,8 @@
       "Bash(git commit:*)",
       "WebSearch",
       "WebFetch(domain:platform.openai.com)",
-      "WebFetch(domain:img.ly)"
+      "WebFetch(domain:img.ly)",
+      "Bash(git log:*)"
     ],
     "deny": [],
     "ask": []

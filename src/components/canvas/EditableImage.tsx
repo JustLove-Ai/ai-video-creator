@@ -1,6 +1,9 @@
 "use client";
 
+import { motion } from "framer-motion";
 import { Image as ImageIcon } from "lucide-react";
+import { ElementAnimation } from "@/types";
+import { getAnimationProps } from "@/lib/animations";
 
 interface EditableImageProps {
   src?: string;
@@ -10,6 +13,8 @@ interface EditableImageProps {
   style?: React.CSSProperties;
   aspectRatio?: string;
   bleed?: boolean; // When true, image fills container completely
+  animation?: ElementAnimation;
+  onElementClick?: () => void;
 }
 
 export function EditableImage({
@@ -20,30 +25,44 @@ export function EditableImage({
   style = {},
   aspectRatio = "16/9",
   bleed = false,
+  animation,
+  onElementClick,
 }: EditableImageProps) {
+  const animationProps = getAnimationProps(animation);
+
+  const handleClick = (e: React.MouseEvent) => {
+    onReplace();
+    if (onElementClick) {
+      e.stopPropagation();
+      onElementClick();
+    }
+  };
+
   if (!src) {
     return (
-      <div
+      <motion.div
+        {...animationProps}
         className={`relative bg-muted/30 border-2 border-dashed border-muted-foreground/30 ${bleed ? '' : 'rounded-lg'} flex flex-col items-center justify-center hover:border-primary hover:bg-muted/50 transition-all cursor-pointer group ${className}`}
         style={{ ...style, aspectRatio: bleed ? undefined : aspectRatio }}
-        onClick={onReplace}
+        onClick={handleClick}
       >
         <ImageIcon className="h-12 w-12 text-muted-foreground/40 group-hover:text-primary transition-colors mb-3" />
         <p className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">Click to add image</p>
-      </div>
+      </motion.div>
     );
   }
 
   return (
-    <div
+    <motion.div
+      {...animationProps}
       className={`relative ${bleed ? '' : 'rounded-lg'} overflow-hidden group cursor-pointer ${className}`}
       style={{ ...style, aspectRatio: bleed ? undefined : aspectRatio }}
-      onClick={onReplace}
+      onClick={handleClick}
     >
       <img src={src} alt={alt} className={`w-full h-full object-cover`} />
       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all flex items-center justify-center">
         <ImageIcon className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
       </div>
-    </div>
+    </motion.div>
   );
 }

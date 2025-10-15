@@ -1,7 +1,10 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { motion } from "framer-motion";
 import { Textarea } from "@/components/ui/textarea";
+import { ElementAnimation } from "@/types";
+import { getAnimationProps } from "@/lib/animations";
 
 interface EditableTextProps {
   value: string;
@@ -11,6 +14,8 @@ interface EditableTextProps {
   style?: React.CSSProperties;
   multiline?: boolean;
   align?: "left" | "center" | "right";
+  animation?: ElementAnimation;
+  onElementClick?: () => void;
 }
 
 export function EditableText({
@@ -21,10 +26,13 @@ export function EditableText({
   style = {},
   multiline = false,
   align = "left",
+  animation,
+  onElementClick,
 }: EditableTextProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const animationProps = getAnimationProps(animation);
 
   useEffect(() => {
     if (isEditing && textareaRef.current) {
@@ -72,13 +80,20 @@ export function EditableText({
   }
 
   return (
-    <div
+    <motion.div
+      {...animationProps}
       className="relative group"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       <div
-        onClick={handleClick}
+        onClick={(e) => {
+          handleClick();
+          if (onElementClick) {
+            e.stopPropagation();
+            onElementClick();
+          }
+        }}
         className={`cursor-text hover:outline hover:outline-2 hover:outline-dashed hover:outline-blue-400 transition-all rounded px-2 py-1 ${className}`}
         style={{
           ...style,
@@ -88,6 +103,6 @@ export function EditableText({
       >
         {value || <span className="opacity-40">{placeholder}</span>}
       </div>
-    </div>
+    </motion.div>
   );
 }

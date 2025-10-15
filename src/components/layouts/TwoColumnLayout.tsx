@@ -1,16 +1,22 @@
 "use client";
 
-import { Theme, LayoutContent } from "@/types";
+import { Theme, LayoutContent, AnimationConfig } from "@/types";
 import { EditableText } from "@/components/canvas/EditableText";
 import { getBackgroundStyle } from "@/lib/themes";
+import { getElementAnimation } from "@/lib/animationHelpers";
 
 interface TwoColumnLayoutProps {
   content: LayoutContent;
   theme: Theme;
   onContentChange: (content: LayoutContent) => void;
+  animationConfig?: AnimationConfig;
+  onAnimationPanelOpen?: (element: keyof AnimationConfig) => void;
 }
 
-export function TwoColumnLayout({ content, theme, onContentChange }: TwoColumnLayoutProps) {
+export function TwoColumnLayout({ content, theme, onContentChange, animationConfig, onAnimationPanelOpen }: TwoColumnLayoutProps) {
+  const titleAnimation = getElementAnimation(animationConfig, "title");
+  const leftColumnAnimation = getElementAnimation(animationConfig, "leftColumn");
+  const rightColumnAnimation = getElementAnimation(animationConfig, "rightColumn");
   return (
     <div
       className="w-full h-full flex flex-col"
@@ -33,6 +39,8 @@ export function TwoColumnLayout({ content, theme, onContentChange }: TwoColumnLa
             color: theme.typography.titleColor,
             lineHeight: 1.2,
           }}
+          animation={titleAnimation}
+          onElementClick={() => onAnimationPanelOpen?.("title")}
         />
       )}
 
@@ -54,6 +62,8 @@ export function TwoColumnLayout({ content, theme, onContentChange }: TwoColumnLa
                 lineHeight: 1.6,
               }}
               multiline
+              animation={leftColumnAnimation}
+              onElementClick={() => onAnimationPanelOpen?.("leftColumn")}
             />
           </div>
         )}
@@ -85,6 +95,8 @@ export function TwoColumnLayout({ content, theme, onContentChange }: TwoColumnLa
                 lineHeight: 1.6,
               }}
               multiline
+              animation={rightColumnAnimation}
+              onElementClick={() => onAnimationPanelOpen?.("rightColumn")}
             />
           </div>
         )}

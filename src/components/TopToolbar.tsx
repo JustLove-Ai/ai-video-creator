@@ -22,7 +22,9 @@ import {
   BarChart3,
   Save,
   Sparkles,
-  Wand2
+  Wand2,
+  Zap,
+  Wand
 } from "lucide-react";
 import { RightPanelType } from "@/types";
 
@@ -43,6 +45,8 @@ interface TopToolbarProps {
 const tools = [
   { id: "layout", label: "Layout", icon: LayoutGrid },
   { id: "theme", label: "Theme", icon: Palette },
+  { id: "animation", label: "Animation", icon: Zap },
+  { id: "beautify", label: "Beautify", icon: Wand2 },
   { id: "annotations", label: "Annotate", icon: Pencil },
   { id: "avatars", label: "Avatars", icon: User },
   { id: "charts", label: "Charts", icon: BarChart3 },
@@ -76,6 +80,10 @@ export function TopToolbar({
       onRightPanelChange(rightPanel === "layout" ? null : "layout");
     } else if (toolId === "theme") {
       onRightPanelChange(rightPanel === "theme" ? null : "theme");
+    } else if (toolId === "animation") {
+      onRightPanelChange(rightPanel === "animation" ? null : "animation");
+    } else if (toolId === "beautify") {
+      onBeautify();
     } else if (toolId === "charts") {
       onRightPanelChange(rightPanel === "charts" ? null : "charts");
     } else if (toolId === "media") {
@@ -92,6 +100,7 @@ export function TopToolbar({
   const isToolActive = (toolId: string) => {
     if (toolId === "layout") return rightPanel === "layout";
     if (toolId === "theme") return rightPanel === "theme";
+    if (toolId === "animation") return rightPanel === "animation";
     if (toolId === "charts") return rightPanel === "charts";
     if (toolId === "media") return rightPanel === "imageUpload";
     if (toolId === "video") return rightPanel === "videoSettings";
@@ -203,15 +212,6 @@ export function TopToolbar({
         <Button variant="outline" size="sm" className="gap-2">
           <Save className="h-4 w-4" />
           Save
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          className="gap-2 border-purple-500/50 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950"
-          onClick={onBeautify}
-        >
-          <Wand2 className="h-4 w-4" />
-          Beautify Slides
         </Button>
         <Button variant="outline" size="sm" className="gap-2" onClick={onPreview}>
           <Eye className="h-4 w-4" />
