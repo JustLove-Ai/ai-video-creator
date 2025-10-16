@@ -1,11 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { X, Check } from "lucide-react";
+import { X, Check, LayoutGrid, Settings2 } from "lucide-react";
 import { LayoutType, LayoutContent } from "@/types";
 import { getLayoutName, getLayoutDescription } from "@/lib/layouts";
 
@@ -38,6 +39,8 @@ const layouts: LayoutType[] = [
 ];
 
 export function LayoutPanel({ currentLayout, currentContent, onLayoutSelect, onContentChange, onClose }: LayoutPanelProps) {
+  const [activeTab, setActiveTab] = useState<"layouts" | "options">("layouts");
+
   // Layouts that support images and can have bleed
   const supportsBleed = ["imageLeft", "imageRight", "imageBullets", "fullImage"].includes(currentLayout);
 
@@ -51,16 +54,44 @@ export function LayoutPanel({ currentLayout, currentContent, onLayoutSelect, onC
     >
       {/* Header */}
       <div className="p-4 border-b border-border flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Choose Layout</h2>
+        <h2 className="text-lg font-semibold">Layouts</h2>
         <Button variant="ghost" size="icon" onClick={onClose}>
           <X className="h-4 w-4" />
         </Button>
       </div>
 
+      {/* Tabs */}
+      <div className="flex border-b border-border">
+        <button
+          onClick={() => setActiveTab("layouts")}
+          className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-colors ${
+            activeTab === "layouts"
+              ? "bg-muted text-foreground border-b-2 border-primary"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+          }`}
+        >
+          <LayoutGrid className="h-4 w-4" />
+          Templates
+        </button>
+        <button
+          onClick={() => setActiveTab("options")}
+          className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-colors ${
+            activeTab === "options"
+              ? "bg-muted text-foreground border-b-2 border-primary"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+          }`}
+        >
+          <Settings2 className="h-4 w-4" />
+          Options
+        </button>
+      </div>
+
       {/* Scrollable Content */}
       <ScrollArea className="flex-1">
-        {/* Layouts Grid */}
-        <div className="p-4 grid grid-cols-2 gap-3">
+        {activeTab === "layouts" && (
+          <>
+            {/* Layouts Grid */}
+            <div className="p-4 grid grid-cols-2 gap-3">
           {layouts.map((layout) => {
             const isActive = currentLayout === layout;
             return (
@@ -249,11 +280,20 @@ export function LayoutPanel({ currentLayout, currentContent, onLayoutSelect, onC
               </button>
             );
           })}
-        </div>
+            </div>
 
-        {/* Layout Settings */}
-        <div className="p-4 border-t border-border space-y-3">
-          <div className="text-sm font-semibold mb-2">Layout Options</div>
+            {/* Info */}
+            <div className="p-4 border-t border-border bg-muted/30">
+              <p className="text-xs text-muted-foreground">
+                {getLayoutDescription(currentLayout)}
+              </p>
+            </div>
+          </>
+        )}
+
+        {activeTab === "options" && (
+          <div className="p-4 space-y-4">
+            <div className="text-sm font-semibold">Visibility Options</div>
 
         {/* Visibility Toggles based on current layout */}
         {(currentLayout === "cover" || currentLayout === "imageLeft" || currentLayout === "imageRight" ||
@@ -365,31 +405,28 @@ export function LayoutPanel({ currentLayout, currentContent, onLayoutSelect, onC
         {supportsBleed && (
           <>
             <div className="border-t border-border pt-3 mt-3"></div>
-            <div className="flex items-center justify-between">
-              <Label htmlFor="image-bleed" className="text-sm">
-                Image Bleed
-              </Label>
-              <Switch
-                id="image-bleed"
-                checked={currentContent.imageBleed || false}
-                onCheckedChange={(checked) => {
-                  onContentChange({ ...currentContent, imageBleed: checked });
-                }}
-              />
+            <div className="space-y-3">
+              <div className="text-sm font-semibold">Image Settings</div>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="image-bleed" className="text-sm">
+                  Image Bleed
+                </Label>
+                <Switch
+                  id="image-bleed"
+                  checked={currentContent.imageBleed || false}
+                  onCheckedChange={(checked) => {
+                    onContentChange({ ...currentContent, imageBleed: checked });
+                  }}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Stretch image to edges without padding
+              </p>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Stretch image to edges without padding
-            </p>
           </>
         )}
-        </div>
-
-        {/* Info */}
-        <div className="p-4 border-t border-border bg-muted/30">
-          <p className="text-xs text-muted-foreground">
-            {getLayoutDescription(currentLayout)}
-          </p>
-        </div>
+          </div>
+        )}
       </ScrollArea>
     </motion.div>
   );
