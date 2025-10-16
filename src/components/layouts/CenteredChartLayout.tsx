@@ -57,6 +57,8 @@ export function CenteredChartLayout({
             onImageReplace={onImageReplace}
             onChartAdd={onChartAdd}
             className="w-full h-full"
+            alignment={content.imageAlignment}
+            fit={content.imageFit}
           />
         </div>
       </div>

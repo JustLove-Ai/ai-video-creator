@@ -39,6 +39,8 @@ export function FullImageLayout({
         bleed={true}
         animation={imageAnimation}
         onElementClick={() => onAnimationPanelOpen?.("image")}
+        alignment={content.imageAlignment}
+        fit={content.imageFit}
       />
 
       {/* Text Overlay with gradient background */}

@@ -91,6 +91,8 @@ export function ImageBulletsLayout({
             bleed={hasBleed}
             animation={imageAnimation}
             onElementClick={() => onAnimationPanelOpen?.("image")}
+            alignment={content.imageAlignment}
+            fit={content.imageFit}
           />
         </div>
 

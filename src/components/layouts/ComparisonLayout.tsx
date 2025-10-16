@@ -73,6 +73,8 @@ export function ComparisonLayout({
               onImageReplace={onImageReplace}
               onChartAdd={onChartAdd}
               className="w-full h-full"
+              alignment={content.imageAlignment}
+              fit={content.imageFit}
             />
           </div>
         </div>
@@ -100,6 +102,8 @@ export function ComparisonLayout({
               onImageReplace={onImageReplace}
               onChartAdd={onChartAdd}
               className="w-full h-full"
+              alignment={content.imageAlignment}
+              fit={content.imageFit}
             />
           </div>
         </div>

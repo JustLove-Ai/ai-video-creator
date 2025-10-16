@@ -58,6 +58,8 @@ export function ImageGridLayout({
                 onChartAdd={onChartAdd}
                 className="w-full h-full"
                 bleed={true}
+                alignment={content.imageAlignment}
+                fit={content.imageFit}
               />
             </div>
           ))}
@@ -126,6 +128,8 @@ export function ImageGridLayout({
               className="w-full h-full"
               aspectRatio="4/3"
               bleed={false}
+              alignment={content.imageAlignment}
+              fit={content.imageFit}
             />
           </div>
         ))}

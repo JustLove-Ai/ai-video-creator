@@ -36,6 +36,8 @@ export function QuoteLayout({
             onChartAdd={onChartAdd}
             className="w-full h-full"
             bleed={true}
+            alignment={content.imageAlignment}
+            fit={content.imageFit}
           />
         </div>
 

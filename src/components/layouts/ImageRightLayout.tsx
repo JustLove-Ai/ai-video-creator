@@ -95,6 +95,8 @@ export function ImageRightLayout({
             bleed={true}
             animation={imageAnimation}
             onElementClick={() => onAnimationPanelOpen?.("image")}
+            alignment={content.imageAlignment}
+            fit={content.imageFit}
           />
         </div>
       </div>
@@ -160,6 +162,8 @@ export function ImageRightLayout({
           bleed={false}
           animation={imageAnimation}
           onElementClick={() => onAnimationPanelOpen?.("image")}
+          alignment={content.imageAlignment}
+          fit={content.imageFit}
         />
       </div>
     </div>
