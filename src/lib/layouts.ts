@@ -146,6 +146,19 @@ export function parseScriptToLayout(
         imageFit: "cover",
       };
 
+    case "imageBulletsBleedLeft":
+    case "imageBulletsBleedRight":
+      return {
+        title: sentences[0] || "Untitled Slide",
+        bulletPoints:
+          sentences.slice(1).length > 0
+            ? sentences.slice(1, 6)
+            : ["Point 1", "Point 2", "Point 3"],
+        imageUrl: "",
+        imageAlignment: "center",
+        imageFit: "cover",
+      };
+
     default:
       return {
         title: sentences[0] || "Untitled Slide",
@@ -175,6 +188,8 @@ export function getLayoutName(layoutType: LayoutType): string {
     imageGrid2: "2 Images",
     imageGrid4: "4 Images",
     imageGrid6: "6 Images",
+    imageBulletsBleedLeft: "Bullets Right Bleed",
+    imageBulletsBleedRight: "Bullets Left Bleed",
   };
   return names[layoutType];
 }
@@ -201,6 +216,8 @@ export function getLayoutDescription(layoutType: LayoutType): string {
     imageGrid2: "2-image grid layout",
     imageGrid4: "4-image grid layout",
     imageGrid6: "6-image grid layout",
+    imageBulletsBleedLeft: "Full bleed image on left, title and bullets on right",
+    imageBulletsBleedRight: "Title and bullets on left, full bleed image on right",
   };
   return descriptions[layoutType];
 }

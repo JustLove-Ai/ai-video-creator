@@ -23,6 +23,8 @@ const layouts: LayoutType[] = [
   "imageLeft",
   "imageRight",
   "imageBullets",
+  "imageBulletsBleedLeft",
+  "imageBulletsBleedRight",
   "fullImage",
   "centeredImageMedium",
   "centeredImageLarge",
@@ -87,7 +89,8 @@ export function LayoutPanel({ currentLayout, currentContent, onLayoutSelect, onC
       </div>
 
       {/* Scrollable Content */}
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1 overflow-auto">
+        <div className="h-full">
         {activeTab === "layouts" && (
           <>
             {/* Layouts Grid */}
@@ -264,6 +267,28 @@ export function LayoutPanel({ currentLayout, currentContent, onLayoutSelect, onC
                       <div className="w-4/5 aspect-video bg-foreground/30 rounded mt-1"></div>
                     </div>
                   )}
+                  {layout === "imageBulletsBleedLeft" && (
+                    <div className="h-full flex gap-0">
+                      <div className="w-1/2 bg-foreground/30"></div>
+                      <div className="w-1/2 flex flex-col gap-0.5 justify-center p-1">
+                        <div className="w-full h-1 bg-foreground/80 rounded"></div>
+                        <div className="w-full h-0.5 bg-foreground/40 rounded"></div>
+                        <div className="w-full h-0.5 bg-foreground/40 rounded"></div>
+                        <div className="w-full h-0.5 bg-foreground/40 rounded"></div>
+                      </div>
+                    </div>
+                  )}
+                  {layout === "imageBulletsBleedRight" && (
+                    <div className="h-full flex gap-0">
+                      <div className="w-1/2 flex flex-col gap-0.5 justify-center p-1">
+                        <div className="w-full h-1 bg-foreground/80 rounded"></div>
+                        <div className="w-full h-0.5 bg-foreground/40 rounded"></div>
+                        <div className="w-full h-0.5 bg-foreground/40 rounded"></div>
+                        <div className="w-full h-0.5 bg-foreground/40 rounded"></div>
+                      </div>
+                      <div className="w-1/2 bg-foreground/30"></div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Active Indicator */}
@@ -427,6 +452,7 @@ export function LayoutPanel({ currentLayout, currentContent, onLayoutSelect, onC
         )}
           </div>
         )}
+        </div>
       </ScrollArea>
     </motion.div>
   );

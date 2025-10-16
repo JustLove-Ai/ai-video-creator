@@ -16,6 +16,8 @@ import { StepsLayout } from "@/components/layouts/StepsLayout";
 import { ImageGridLayout } from "@/components/layouts/ImageGridLayout";
 import { CenteredImageMediumLayout } from "@/components/layouts/CenteredImageMediumLayout";
 import { CenteredImageLargeLayout } from "@/components/layouts/CenteredImageLargeLayout";
+import { ImageBulletsBleedLeftLayout } from "@/components/layouts/ImageBulletsBleedLeftLayout";
+import { ImageBulletsBleedRightLayout } from "@/components/layouts/ImageBulletsBleedRightLayout";
 
 interface LayoutRendererProps {
   layoutType: LayoutType;
@@ -214,6 +216,30 @@ export function LayoutRenderer({
           theme={theme}
           onContentChange={onContentChange}
           onImageReplace={onImageReplace}
+          animationConfig={animationConfig}
+        />
+      );
+
+    case "imageBulletsBleedLeft":
+      return (
+        <ImageBulletsBleedLeftLayout
+          content={content}
+          theme={theme}
+          onContentChange={onContentChange}
+          onImageReplace={onImageReplace}
+          onChartAdd={onChartAdd}
+          animationConfig={animationConfig}
+        />
+      );
+
+    case "imageBulletsBleedRight":
+      return (
+        <ImageBulletsBleedRightLayout
+          content={content}
+          theme={theme}
+          onContentChange={onContentChange}
+          onImageReplace={onImageReplace}
+          onChartAdd={onChartAdd}
           animationConfig={animationConfig}
         />
       );

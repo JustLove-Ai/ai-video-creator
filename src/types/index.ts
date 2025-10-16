@@ -18,7 +18,9 @@ export type LayoutType =
   | "imageGrid4"
   | "imageGrid6"
   | "centeredImageMedium"
-  | "centeredImageLarge";
+  | "centeredImageLarge"
+  | "imageBulletsBleedLeft"
+  | "imageBulletsBleedRight";
 
 // Image alignment options
 export type ImageAlignment = "top-left" | "top-center" | "top-right" | "center-left" | "center" | "center-right" | "bottom-left" | "bottom-center" | "bottom-right";
