@@ -37,6 +37,7 @@ interface TopToolbarProps {
   onAnnotationModeToggle: () => void;
   projectTitle: string;
   onTitleUpdate: (newTitle: string) => void;
+  onSave: () => void;
   onPreview: () => void;
   onExport: () => void;
   onBeautify: () => void;
@@ -63,6 +64,7 @@ export function TopToolbar({
   onAnnotationModeToggle,
   projectTitle,
   onTitleUpdate,
+  onSave,
   onPreview,
   onExport,
   onBeautify,
@@ -209,7 +211,7 @@ export function TopToolbar({
       {/* Right Section */}
       <div className="flex items-center gap-3">
         <Separator orientation="vertical" className="h-6" />
-        <Button variant="outline" size="sm" className="gap-2">
+        <Button variant="outline" size="sm" className="gap-2" onClick={onSave}>
           <Save className="h-4 w-4" />
           Save
         </Button>

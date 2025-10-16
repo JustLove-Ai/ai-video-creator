@@ -399,6 +399,42 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
     });
   };
 
+  // Handle manual save
+  const handleManualSave = async () => {
+    if (!project) {
+      toast.error("No project loaded");
+      return;
+    }
+
+    try {
+      // Save project settings (theme, video settings, audio settings)
+      await updateProject(project.id, {
+        theme: activeTheme as Prisma.InputJsonValue,
+        videoSettings: videoSettings as Prisma.InputJsonValue,
+        audioSettings: audioSettings as Prisma.InputJsonValue,
+      });
+
+      // Save all scenes
+      const savePromises = scenes.map((scene) =>
+        updateScene(scene.id, {
+          content: scene.content,
+          duration: scene.duration,
+          layout: scene.layout,
+          layoutContent: scene.layoutContent as Prisma.InputJsonValue,
+          annotations: scene.annotations as Prisma.InputJsonValue,
+          themeOverride: scene.themeOverride as Prisma.InputJsonValue | undefined,
+          animationConfig: scene.animationConfig as any,
+        })
+      );
+
+      await Promise.all(savePromises);
+      toast.success("Project saved successfully!");
+    } catch (error) {
+      console.error("Failed to save project:", error);
+      toast.error("Failed to save project");
+    }
+  };
+
   // Handle beautify complete - reload project data
   const handleBeautifyComplete = async () => {
     try {
@@ -439,6 +475,7 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
         onAnnotationModeToggle={() => setAnnotationMode(!annotationMode)}
         projectTitle={project?.title || "Untitled Video"}
         onTitleUpdate={handleTitleUpdate}
+        onSave={handleManualSave}
         onPreview={() => setShowVideoPreview(true)}
         onExport={() => setRightPanel("videoSettings")}
         onBeautify={() => setShowBeautifyModal(true)}
