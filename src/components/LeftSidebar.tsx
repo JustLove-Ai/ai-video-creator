@@ -21,6 +21,23 @@ import {
   Copy
 } from "lucide-react";
 import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -31,7 +48,7 @@ import { Scene, Theme, LayoutType, AnnotationElement, LayoutContent } from "@/ty
 import { parseScriptToLayout } from "@/lib/layouts";
 import { YOUTUBE_SCRIPT_PROMPT, AI_GENERATION_SYSTEM_PROMPT } from "@/lib/constants";
 import { generateYouTubeScript, generateSceneContent, generateSpeech, importUserScript } from "@/app/actions/openai";
-import { createScene, updateScene, deleteScene, deleteAllScenes, duplicateScene } from "@/app/actions/scenes";
+import { createScene, updateScene, deleteScene, deleteAllScenes, duplicateScene, reorderScenes } from "@/app/actions/scenes";
 import { getProject } from "@/app/actions/projects";
 import { getAudioDuration } from "@/lib/audioUtils";
 import { VoiceRecorder } from "@/components/VoiceRecorder";
@@ -481,6 +498,42 @@ export function LeftSidebar({
     });
   };
 
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) {
+      return;
+    }
+
+    const oldIndex = scenes.findIndex((s) => s.id === active.id);
+    const newIndex = scenes.findIndex((s) => s.id === over.id);
+
+    const newScenes = arrayMove(scenes, oldIndex, newIndex);
+    setScenes(newScenes);
+
+    // Save new order to database
+    startTransition(async () => {
+      try {
+        const sceneIds = newScenes.map((s) => s.id);
+        await reorderScenes(projectId, sceneIds);
+        toast.success("Scenes reordered");
+      } catch (error) {
+        console.error("Failed to reorder scenes:", error);
+        toast.error("Failed to reorder scenes");
+        // Revert on error
+        setScenes(scenes);
+      }
+    });
+  };
+
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
@@ -597,193 +650,54 @@ export function LeftSidebar({
       {/* Scenes List */}
       <div className="flex-1 overflow-hidden">
         <ScrollArea className="h-full">
-          <div className="p-4 space-y-3">
-          {scenes.map((scene, index) => (
-            <motion.div
-              key={scene.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: index * 0.1 }}
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={scenes.map((s) => s.id)}
+              strategy={verticalListSortingStrategy}
             >
-              <Card
-                className={`p-3 cursor-pointer transition-all duration-200 group ${
-                  activeSceneId === scene.id
-                    ? `border-primary bg-primary/5 ${editingSceneId !== scene.id && aiPromptSceneId !== scene.id ? 'shadow-[0_0_15px_rgba(255,121,0,0.3)]' : ''}`
-                    : "border-border hover:border-muted-foreground/50"
-                }`}
-                onClick={() => setActiveSceneId(scene.id)}
-              >
-                <div className="flex items-start gap-2">
-                  <div className="flex items-center gap-1 mt-1">
-                    <GripVertical className="h-3 w-3 text-muted-foreground/50" />
-                    <div className="w-5 h-5 bg-muted rounded text-xs flex items-center justify-center text-muted-foreground">
-                      {index + 1}
-                    </div>
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    {aiPromptSceneId === scene.id ? (
-                      <div className="space-y-2">
-                        <Textarea
-                          value={aiPrompt}
-                          onChange={(e) => setAiPrompt(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" && e.ctrlKey) {
-                              generateSceneContentWithAI(scene.id);
-                            }
-                          }}
-                          placeholder="Describe what this slide should be about..."
-                          className="min-h-[60px] text-sm resize-none focus-visible:border-border focus-visible:ring-muted"
-                          autoFocus
-                        />
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            onClick={() => generateSceneContentWithAI(scene.id)}
-                            disabled={!aiPrompt.trim() || isGeneratingAI === scene.id}
-                            className="gap-2"
-                          >
-                            <Sparkles className="h-3 w-3" />
-                            {isGeneratingAI === scene.id ? "Generating..." : "Generate"}
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setAiPromptSceneId(null);
-                              setAiPrompt("");
-                            }}
-                          >
-                            Cancel
-                          </Button>
-                        </div>
-                      </div>
-                    ) : editingSceneId === scene.id ? (
-                      <Textarea
-                        value={scene.content}
-                        onChange={(e) => updateSceneContent(scene.id, e.target.value)}
-                        onBlur={() => setEditingSceneId(null)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" && e.ctrlKey) {
-                            setEditingSceneId(null);
-                          }
-                        }}
-                        className="min-h-[60px] text-sm resize-none focus-visible:border-border focus-visible:ring-muted"
-                        autoFocus
-                      />
-                    ) : (
-                      <div
-                        className="text-sm text-foreground leading-relaxed cursor-text line-clamp-2"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setEditingSceneId(scene.id);
-                        }}
-                      >
-                        {scene.content}
-                      </div>
-                    )}
-
-                    <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
-                      <span>{scene.duration}s</span>
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        {/* Play recorded or AI audio */}
-                        {(scene.recordedAudioUrl || scene.audioUrl) && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className={`h-6 w-6 ${playingAudio === scene.id ? 'text-primary' : scene.recordedAudioUrl ? 'text-blue-500' : 'text-green-500'}`}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              playAudio(scene.id, scene.recordedAudioUrl || scene.audioUrl!);
-                            }}
-                            title={playingAudio === scene.id ? "Stop audio" : "Play audio"}
-                          >
-                            <Play className="h-3 w-3" />
-                          </Button>
-                        )}
-                        {/* Voice Recorder */}
-                        <div onClick={(e) => e.stopPropagation()}>
-                          <VoiceRecorder
-                            sceneId={scene.id}
-                            existingAudioUrl={scene.recordedAudioUrl}
-                            onRecordingComplete={(audioUrl, duration) => handleRecordingComplete(scene.id, audioUrl, duration)}
-                            onRecordingDelete={() => handleRecordingDelete(scene.id)}
-                          />
-                        </div>
-                        {/* AI Voice Generator */}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className={`h-6 w-6 ${scene.audioUrl ? 'text-green-500' : ''}`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            generateAudioForScene(scene.id);
-                          }}
-                          disabled={isGeneratingAudio === scene.id}
-                          title={scene.audioUrl ? "Regenerate AI audio" : "Generate AI audio"}
-                        >
-                          {isGeneratingAudio === scene.id ? (
-                            <div className="h-3 w-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                          ) : (
-                            <Volume2 className="h-3 w-3" />
-                          )}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className={`h-6 w-6 ${aiPromptSceneId === scene.id ? 'bg-primary/10 text-primary' : ''}`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleAiPromptToggle(scene.id);
-                          }}
-                        >
-                          <Sparkles className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDuplicateScene(scene.id);
-                          }}
-                          title="Duplicate scene"
-                        >
-                          <Copy className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setEditingSceneId(scene.id);
-                            setAiPromptSceneId(null);
-                          }}
-                        >
-                          <Edit className="h-3 w-3" />
-                        </Button>
-                        {scenes.length > 1 && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 text-destructive hover:text-destructive"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteScene(scene.id);
-                            }}
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            </motion.div>
-          ))}
-        </div>
+              <div className="p-4 space-y-3">
+                {scenes.map((scene, index) => (
+                  <SortableSceneItem
+                    key={scene.id}
+                    scene={scene}
+                    index={index}
+                    isActive={activeSceneId === scene.id}
+                    isEditing={editingSceneId === scene.id}
+                    isAiPrompt={aiPromptSceneId === scene.id}
+                    aiPrompt={aiPrompt}
+                    isGeneratingAI={isGeneratingAI === scene.id}
+                    isGeneratingAudio={isGeneratingAudio === scene.id}
+                    playingAudio={playingAudio === scene.id}
+                    scenesLength={scenes.length}
+                    onSceneClick={() => setActiveSceneId(scene.id)}
+                    onContentChange={(content) => updateSceneContent(scene.id, content)}
+                    onEditToggle={() => {
+                      setEditingSceneId(scene.id);
+                      setAiPromptSceneId(null);
+                    }}
+                    onEditBlur={() => setEditingSceneId(null)}
+                    onAiPromptChange={(e) => setAiPrompt(e.target.value)}
+                    onAiPromptToggle={() => handleAiPromptToggle(scene.id)}
+                    onAiGenerate={() => generateSceneContentWithAI(scene.id)}
+                    onAiCancel={() => {
+                      setAiPromptSceneId(null);
+                      setAiPrompt("");
+                    }}
+                    onAudioPlay={(audioUrl) => playAudio(scene.id, audioUrl)}
+                    onAudioGenerate={() => generateAudioForScene(scene.id)}
+                    onDuplicate={() => handleDuplicateScene(scene.id)}
+                    onDelete={() => handleDeleteScene(scene.id)}
+                    onRecordingComplete={(audioUrl, duration) => handleRecordingComplete(scene.id, audioUrl, duration)}
+                    onRecordingDelete={() => handleRecordingDelete(scene.id)}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
         </ScrollArea>
       </div>
 
@@ -801,5 +715,262 @@ export function LeftSidebar({
         onTranscriptionComplete={handleImportScript}
       />
     </div>
+  );
+}
+
+// Sortable Scene Item Component
+function SortableSceneItem({
+  scene,
+  index,
+  isActive,
+  isEditing,
+  isAiPrompt,
+  aiPrompt,
+  isGeneratingAI,
+  isGeneratingAudio,
+  playingAudio,
+  scenesLength,
+  onSceneClick,
+  onContentChange,
+  onEditToggle,
+  onEditBlur,
+  onAiPromptChange,
+  onAiPromptToggle,
+  onAiGenerate,
+  onAiCancel,
+  onAudioPlay,
+  onAudioGenerate,
+  onDuplicate,
+  onDelete,
+  onRecordingComplete,
+  onRecordingDelete,
+}: {
+  scene: Scene;
+  index: number;
+  isActive: boolean;
+  isEditing: boolean;
+  isAiPrompt: boolean;
+  aiPrompt: string;
+  isGeneratingAI: boolean;
+  isGeneratingAudio: boolean;
+  playingAudio: boolean;
+  scenesLength: number;
+  onSceneClick: () => void;
+  onContentChange: (content: string) => void;
+  onEditToggle: () => void;
+  onEditBlur: () => void;
+  onAiPromptChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+  onAiPromptToggle: () => void;
+  onAiGenerate: () => void;
+  onAiCancel: () => void;
+  onAudioPlay: (audioUrl: string) => void;
+  onAudioGenerate: () => void;
+  onDuplicate: () => void;
+  onDelete: () => void;
+  onRecordingComplete: (audioUrl: string, duration: number) => void;
+  onRecordingDelete: () => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: scene.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <motion.div
+      ref={setNodeRef}
+      style={style}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: isDragging ? 0.5 : 1, y: 0 }}
+      transition={{ duration: 0.3, delay: index * 0.1 }}
+    >
+      <Card
+        className={`p-3 cursor-pointer transition-all duration-200 group ${
+          isActive
+            ? `border-primary bg-primary/5 ${!isEditing && !isAiPrompt ? 'shadow-[0_0_15px_rgba(255,121,0,0.3)]' : ''}`
+            : "border-border hover:border-muted-foreground/50"
+        }`}
+        onClick={onSceneClick}
+      >
+        <div className="flex items-start gap-2">
+          <div className="flex items-center gap-1 mt-1">
+            <div
+              {...attributes}
+              {...listeners}
+              className="cursor-grab active:cursor-grabbing touch-none"
+            >
+              <GripVertical className="h-3 w-3 text-muted-foreground/50" />
+            </div>
+            <div className="w-5 h-5 bg-muted rounded text-xs flex items-center justify-center text-muted-foreground">
+              {index + 1}
+            </div>
+          </div>
+
+          <div className="flex-1 min-w-0">
+            {isAiPrompt ? (
+              <div className="space-y-2">
+                <Textarea
+                  value={aiPrompt}
+                  onChange={onAiPromptChange}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && e.ctrlKey) {
+                      onAiGenerate();
+                    }
+                  }}
+                  placeholder="Describe what this slide should be about..."
+                  className="min-h-[60px] text-sm resize-none focus-visible:border-border focus-visible:ring-muted"
+                  autoFocus
+                />
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    onClick={onAiGenerate}
+                    disabled={!aiPrompt.trim() || isGeneratingAI}
+                    className="gap-2"
+                  >
+                    <Sparkles className="h-3 w-3" />
+                    {isGeneratingAI ? "Generating..." : "Generate"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={onAiCancel}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            ) : isEditing ? (
+              <Textarea
+                value={scene.content}
+                onChange={(e) => onContentChange(e.target.value)}
+                onBlur={onEditBlur}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && e.ctrlKey) {
+                    onEditBlur();
+                  }
+                }}
+                className="min-h-[60px] text-sm resize-none focus-visible:border-border focus-visible:ring-muted"
+                autoFocus
+              />
+            ) : (
+              <div
+                className="text-sm text-foreground leading-relaxed cursor-text line-clamp-2"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEditToggle();
+                }}
+              >
+                {scene.content}
+              </div>
+            )}
+
+            <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
+              <span>{scene.duration}s</span>
+              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                {/* Play recorded or AI audio */}
+                {(scene.recordedAudioUrl || scene.audioUrl) && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={`h-6 w-6 ${playingAudio ? 'text-primary' : scene.recordedAudioUrl ? 'text-blue-500' : 'text-green-500'}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onAudioPlay(scene.recordedAudioUrl || scene.audioUrl!);
+                    }}
+                    title={playingAudio ? "Stop audio" : "Play audio"}
+                  >
+                    <Play className="h-3 w-3" />
+                  </Button>
+                )}
+                {/* Voice Recorder */}
+                <div onClick={(e) => e.stopPropagation()}>
+                  <VoiceRecorder
+                    sceneId={scene.id}
+                    existingAudioUrl={scene.recordedAudioUrl}
+                    onRecordingComplete={onRecordingComplete}
+                    onRecordingDelete={onRecordingDelete}
+                  />
+                </div>
+                {/* AI Voice Generator */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={`h-6 w-6 ${scene.audioUrl ? 'text-green-500' : ''}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onAudioGenerate();
+                  }}
+                  disabled={isGeneratingAudio}
+                  title={scene.audioUrl ? "Regenerate AI audio" : "Generate AI audio"}
+                >
+                  {isGeneratingAudio ? (
+                    <div className="h-3 w-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <Volume2 className="h-3 w-3" />
+                  )}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={`h-6 w-6 ${isAiPrompt ? 'bg-primary/10 text-primary' : ''}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onAiPromptToggle();
+                  }}
+                >
+                  <Sparkles className="h-3 w-3" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDuplicate();
+                  }}
+                  title="Duplicate scene"
+                >
+                  <Copy className="h-3 w-3" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEditToggle();
+                  }}
+                >
+                  <Edit className="h-3 w-3" />
+                </Button>
+                {scenesLength > 1 && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 text-destructive hover:text-destructive"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete();
+                    }}
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </Card>
+    </motion.div>
   );
 }

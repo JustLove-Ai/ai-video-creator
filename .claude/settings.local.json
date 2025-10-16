@@ -15,7 +15,9 @@
       "WebSearch",
       "WebFetch(domain:platform.openai.com)",
       "WebFetch(domain:img.ly)",
-      "Bash(git log:*)"
+      "Bash(git log:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run lint)"
     ],
     "deny": [],
     "ask": []
