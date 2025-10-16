@@ -10,6 +10,7 @@ interface FullImageLayoutProps {
   theme: Theme;
   onContentChange: (content: LayoutContent) => void;
   onImageReplace: () => void;
+  onImageRemove: () => void;
   onChartAdd: () => void;
   animationConfig?: AnimationConfig;
   onAnimationPanelOpen?: (element: keyof AnimationConfig) => void;
@@ -20,6 +21,7 @@ export function FullImageLayout({
   theme,
   onContentChange,
   onImageReplace,
+  onImageRemove,
   onChartAdd,
   animationConfig,
   onAnimationPanelOpen,
@@ -34,6 +36,7 @@ export function FullImageLayout({
         imageUrl={content.imageUrl}
         chartData={content.chartData}
         onImageReplace={onImageReplace}
+        onImageRemove={onImageRemove}
         onChartAdd={onChartAdd}
         className="absolute inset-0 w-full h-full"
         bleed={true}

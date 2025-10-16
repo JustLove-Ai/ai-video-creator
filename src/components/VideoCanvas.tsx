@@ -17,6 +17,7 @@ interface VideoCanvasProps {
   annotationMode: boolean;
   onSceneUpdate: (scene: Scene) => void;
   onImageReplace: () => void;
+  onImageRemove: () => void;
   onChartAdd: () => void;
   isTimelineExpanded?: boolean;
   animationKey?: number; // Key to force animation replay
@@ -29,6 +30,7 @@ export function VideoCanvas({
   annotationMode,
   onSceneUpdate,
   onImageReplace,
+  onImageRemove,
   onChartAdd,
   isTimelineExpanded = false,
   animationKey = 0,
@@ -72,6 +74,7 @@ export function VideoCanvas({
           theme={effectiveTheme}
           onContentChange={handleContentChange}
           onImageReplace={onImageReplace}
+          onImageRemove={onImageRemove}
           onChartAdd={onChartAdd}
           animationConfig={activeScene.animationConfig}
         />

@@ -13,6 +13,7 @@ interface ImageBulletsBleedLeftLayoutProps {
   theme: Theme;
   onContentChange: (content: LayoutContent) => void;
   onImageReplace: () => void;
+  onImageRemove: () => void;
   onChartAdd: () => void;
   animationConfig?: AnimationConfig;
   onAnimationPanelOpen?: (element: keyof AnimationConfig) => void;
@@ -23,6 +24,7 @@ export function ImageBulletsBleedLeftLayout({
   theme,
   onContentChange,
   onImageReplace,
+  onImageRemove,
   onChartAdd,
   animationConfig,
   onAnimationPanelOpen,
@@ -55,6 +57,7 @@ export function ImageBulletsBleedLeftLayout({
           imageUrl={content.imageUrl}
           chartData={content.chartData}
           onImageReplace={onImageReplace}
+          onImageRemove={onImageRemove}
           onChartAdd={onChartAdd}
           className="w-full h-full"
           bleed={true}
@@ -94,7 +97,7 @@ export function ImageBulletsBleedLeftLayout({
         )}
 
         {/* Bullet Points */}
-        <div className="flex flex-col" style={{ gap: `${theme.spacing.gap * 0.75}px` }}>
+        <div className="flex flex-col group/bullets" style={{ gap: `${theme.spacing.gap * 0.75}px` }}>
           {bulletPoints.map((point, index) => (
             <div key={index} className="flex items-start gap-3 group">
               <div
@@ -139,7 +142,7 @@ export function ImageBulletsBleedLeftLayout({
               variant="ghost"
               size="sm"
               onClick={addBulletPoint}
-              className="self-start gap-2 mt-2"
+              className="self-start gap-2 mt-2 opacity-0 group-hover/bullets:opacity-100 transition-opacity"
               style={{ color: theme.typography.bodyColor }}
             >
               <Plus className="h-3 w-3" />

@@ -11,6 +11,7 @@ interface QuoteLayoutProps {
   theme: Theme;
   onContentChange: (content: LayoutContent) => void;
   onImageReplace: () => void;
+  onImageRemove: () => void;
   onChartAdd: () => void;
 }
 
@@ -19,6 +20,7 @@ export function QuoteLayout({
   theme,
   onContentChange,
   onImageReplace,
+  onImageRemove,
   onChartAdd,
 }: QuoteLayoutProps) {
   const hasBleed = content.imageBleed ?? true;
@@ -33,6 +35,7 @@ export function QuoteLayout({
             imageUrl={content.imageUrl}
             chartData={content.chartData}
             onImageReplace={onImageReplace}
+            onImageRemove={onImageRemove}
             onChartAdd={onChartAdd}
             className="w-full h-full"
             bleed={true}

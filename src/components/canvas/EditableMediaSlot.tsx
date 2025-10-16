@@ -1,15 +1,17 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Image as ImageIcon } from "lucide-react";
+import { Image as ImageIcon, X } from "lucide-react";
 import { ChartData, ElementAnimation, ImageAlignment, ImageFit } from "@/types";
 import { ChartRenderer } from "./ChartRenderer";
 import { getAnimationProps } from "@/lib/animations";
+import { Button } from "@/components/ui/button";
 
 interface EditableMediaSlotProps {
   imageUrl?: string;
   chartData?: ChartData;
   onImageReplace: () => void;
+  onImageRemove?: () => void; // Optional - only show remove button if provided
   onChartAdd?: () => void;
   className?: string;
   style?: React.CSSProperties;
@@ -25,6 +27,7 @@ export function EditableMediaSlot({
   imageUrl,
   chartData,
   onImageReplace,
+  onImageRemove,
   onChartAdd,
   className = "",
   style = {},
@@ -42,6 +45,13 @@ export function EditableMediaSlot({
     if (onElementClick) {
       e.stopPropagation();
       onElementClick();
+    }
+  };
+
+  const handleRemove = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onImageRemove) {
+      onImageRemove();
     }
   };
 
@@ -91,9 +101,19 @@ export function EditableMediaSlot({
             objectPosition: getObjectPosition(alignment),
           }}
         />
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all flex items-center justify-center">
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all flex items-center justify-center gap-4">
           <ImageIcon className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
         </div>
+        {onImageRemove && (
+          <Button
+            variant="destructive"
+            size="icon"
+            className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+            onClick={handleRemove}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        )}
       </motion.div>
     );
   }

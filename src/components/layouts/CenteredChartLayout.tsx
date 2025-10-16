@@ -10,6 +10,7 @@ interface CenteredChartLayoutProps {
   theme: Theme;
   onContentChange: (content: LayoutContent) => void;
   onImageReplace: () => void;
+  onImageRemove: () => void;
   onChartAdd: () => void;
 }
 
@@ -18,6 +19,7 @@ export function CenteredChartLayout({
   theme,
   onContentChange,
   onImageReplace,
+  onImageRemove,
   onChartAdd,
 }: CenteredChartLayoutProps) {
   return (
@@ -55,6 +57,7 @@ export function CenteredChartLayout({
             imageUrl={content.imageUrl}
             chartData={content.chartData}
             onImageReplace={onImageReplace}
+            onImageRemove={onImageRemove}
             onChartAdd={onChartAdd}
             className="w-full h-full"
             alignment={content.imageAlignment}

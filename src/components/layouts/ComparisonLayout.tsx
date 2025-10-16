@@ -10,6 +10,7 @@ interface ComparisonLayoutProps {
   theme: Theme;
   onContentChange: (content: LayoutContent) => void;
   onImageReplace: () => void;
+  onImageRemove: () => void;
   onChartAdd: () => void;
 }
 
@@ -18,6 +19,7 @@ export function ComparisonLayout({
   theme,
   onContentChange,
   onImageReplace,
+  onImageRemove,
   onChartAdd,
 }: ComparisonLayoutProps) {
   return (
@@ -71,6 +73,7 @@ export function ComparisonLayout({
               imageUrl={content.imageUrl}
               chartData={content.chartData}
               onImageReplace={onImageReplace}
+              onImageRemove={onImageRemove}
               onChartAdd={onChartAdd}
               className="w-full h-full"
               alignment={content.imageAlignment}
@@ -100,6 +103,7 @@ export function ComparisonLayout({
               imageUrl={content.imageUrl2}
               chartData={content.chartData2}
               onImageReplace={onImageReplace}
+              onImageRemove={onImageRemove}
               onChartAdd={onChartAdd}
               className="w-full h-full"
               alignment={content.imageAlignment}

@@ -13,6 +13,7 @@ interface ImageBulletsLayoutProps {
   theme: Theme;
   onContentChange: (content: LayoutContent) => void;
   onImageReplace: () => void;
+  onImageRemove: () => void;
   onChartAdd: () => void;
   animationConfig?: AnimationConfig;
   onAnimationPanelOpen?: (element: keyof AnimationConfig) => void;
@@ -23,6 +24,7 @@ export function ImageBulletsLayout({
   theme,
   onContentChange,
   onImageReplace,
+  onImageRemove,
   onChartAdd,
   animationConfig,
   onAnimationPanelOpen,
@@ -85,6 +87,7 @@ export function ImageBulletsLayout({
             imageUrl={content.imageUrl}
             chartData={content.chartData}
             onImageReplace={onImageReplace}
+            onImageRemove={onImageRemove}
             onChartAdd={onChartAdd}
             className={hasBleed ? 'w-full h-full' : 'w-full'}
             aspectRatio={hasBleed ? undefined : "16/9"}
@@ -97,7 +100,7 @@ export function ImageBulletsLayout({
         </div>
 
         {/* Right: Bullet Points */}
-        <div className="w-[55%] flex flex-col" style={{ gap: `${theme.spacing.gap * 0.75}px`, padding: hasBleed ? `0 ${theme.spacing.padding}px 0 ${theme.spacing.gap * 2}px` : '0' }}>
+        <div className="w-[55%] flex flex-col group/bullets" style={{ gap: `${theme.spacing.gap * 0.75}px`, padding: hasBleed ? `0 ${theme.spacing.padding}px 0 ${theme.spacing.gap * 2}px` : '0' }}>
           {bulletPoints.map((point, index) => (
             <div key={index} className="flex items-start gap-3 group">
               <div
@@ -142,7 +145,7 @@ export function ImageBulletsLayout({
               variant="ghost"
               size="sm"
               onClick={addBulletPoint}
-              className="self-start gap-2 mt-2"
+              className="self-start gap-2 mt-2 opacity-0 group-hover/bullets:opacity-100 transition-opacity"
               style={{ color: theme.typography.bodyColor }}
             >
               <Plus className="h-3 w-3" />

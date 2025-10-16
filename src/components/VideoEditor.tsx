@@ -288,6 +288,37 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
     });
   };
 
+  // Handle image removal
+  const handleImageRemove = () => {
+    if (!activeScene) return;
+
+    setScenes((prev) =>
+      prev.map((s) =>
+        s.id === activeSceneId
+          ? {
+              ...s,
+              imageUrl: undefined,
+              layoutContent: { ...s.layoutContent, imageUrl: undefined },
+            }
+          : s
+      )
+    );
+
+    // Save to database
+    startTransition(async () => {
+      try {
+        await updateScene(activeSceneId, {
+          imageUrl: null,
+          layoutContent: { ...activeScene.layoutContent, imageUrl: undefined } as Prisma.InputJsonValue,
+        });
+        toast.success("Image removed");
+      } catch (error) {
+        console.error("Failed to remove scene image:", error);
+        toast.error("Failed to remove image");
+      }
+    });
+  };
+
   // Handle chart insertion
   const handleChartInsert = (chartData: ChartData) => {
     if (!activeScene) return;
@@ -454,6 +485,7 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
               annotationMode={annotationMode}
               onSceneUpdate={handleSceneUpdate}
               onImageReplace={() => setRightPanel("imageUpload")}
+              onImageRemove={handleImageRemove}
               onChartAdd={() => setRightPanel("charts")}
               isTimelineExpanded={isTimelineExpanded}
               animationKey={animationKey}

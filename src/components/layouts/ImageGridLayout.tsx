@@ -10,6 +10,7 @@ interface ImageGridLayoutProps {
   theme: Theme;
   onContentChange: (content: LayoutContent) => void;
   onImageReplace: () => void;
+  onImageRemove: () => void;
   onChartAdd: () => void;
   gridCount: 2 | 4 | 6;
 }
@@ -19,6 +20,7 @@ export function ImageGridLayout({
   theme,
   onContentChange,
   onImageReplace,
+  onImageRemove,
   onChartAdd,
   gridCount,
 }: ImageGridLayoutProps) {
@@ -55,6 +57,7 @@ export function ImageGridLayout({
               <EditableMediaSlot
                 imageUrl={(content[key] as string) || ""}
                 onImageReplace={onImageReplace}
+                onImageRemove={onImageRemove}
                 onChartAdd={onChartAdd}
                 className="w-full h-full"
                 bleed={true}
@@ -124,6 +127,7 @@ export function ImageGridLayout({
             <EditableMediaSlot
               imageUrl={(content[key] as string) || ""}
               onImageReplace={onImageReplace}
+              onImageRemove={onImageRemove}
               onChartAdd={onChartAdd}
               className="w-full h-full"
               aspectRatio="4/3"

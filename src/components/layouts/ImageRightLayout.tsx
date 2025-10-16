@@ -11,6 +11,7 @@ interface ImageRightLayoutProps {
   theme: Theme;
   onContentChange: (content: LayoutContent) => void;
   onImageReplace: () => void;
+  onImageRemove: () => void;
   onChartAdd: () => void;
   animationConfig?: AnimationConfig;
   onAnimationPanelOpen?: (element: keyof AnimationConfig) => void;
@@ -21,6 +22,7 @@ export function ImageRightLayout({
   theme,
   onContentChange,
   onImageReplace,
+  onImageRemove,
   onChartAdd,
   animationConfig,
   onAnimationPanelOpen,
@@ -90,6 +92,7 @@ export function ImageRightLayout({
             imageUrl={content.imageUrl}
             chartData={content.chartData}
             onImageReplace={onImageReplace}
+            onImageRemove={onImageRemove}
             onChartAdd={onChartAdd}
             className="w-full h-full"
             bleed={true}
@@ -156,6 +159,7 @@ export function ImageRightLayout({
           imageUrl={content.imageUrl}
           chartData={content.chartData}
           onImageReplace={onImageReplace}
+          onImageRemove={onImageRemove}
           onChartAdd={onChartAdd}
           className="w-full h-full"
           aspectRatio="4/3"

@@ -11,6 +11,7 @@ interface CenteredImageMediumLayoutProps {
   content: LayoutContent;
   onContentChange: (content: LayoutContent) => void;
   onImageReplace: () => void;
+  onImageRemove: () => void;
   animationConfig?: AnimationConfig;
   onAnimationPanelOpen?: (element: keyof AnimationConfig) => void;
 }
@@ -20,6 +21,7 @@ export function CenteredImageMediumLayout({
   content,
   onContentChange,
   onImageReplace,
+  onImageRemove,
   animationConfig,
   onAnimationPanelOpen,
 }: CenteredImageMediumLayoutProps) {
@@ -59,6 +61,7 @@ export function CenteredImageMediumLayout({
         <EditableImage
           src={content.imageUrl}
           onReplace={onImageReplace}
+          onRemove={onImageRemove}
           aspectRatio="16/9"
           alignment={content.imageAlignment || "center"}
           fit={content.imageFit || "cover"}

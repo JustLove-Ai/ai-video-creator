@@ -25,6 +25,7 @@ interface LayoutRendererProps {
   theme: Theme;
   onContentChange: (content: LayoutContent) => void;
   onImageReplace: () => void;
+  onImageRemove: () => void;
   onChartAdd: () => void;
   animationConfig?: AnimationConfig;
 }
@@ -35,6 +36,7 @@ export function LayoutRenderer({
   theme,
   onContentChange,
   onImageReplace,
+  onImageRemove,
   onChartAdd,
   animationConfig,
 }: LayoutRendererProps) {
@@ -49,6 +51,7 @@ export function LayoutRenderer({
           theme={theme}
           onContentChange={onContentChange}
           onImageReplace={onImageReplace}
+          onImageRemove={onImageRemove}
           onChartAdd={onChartAdd}
           animationConfig={animationConfig}
         />
@@ -61,6 +64,7 @@ export function LayoutRenderer({
           theme={theme}
           onContentChange={onContentChange}
           onImageReplace={onImageReplace}
+          onImageRemove={onImageRemove}
           onChartAdd={onChartAdd}
           animationConfig={animationConfig}
         />
@@ -73,6 +77,7 @@ export function LayoutRenderer({
           theme={theme}
           onContentChange={onContentChange}
           onImageReplace={onImageReplace}
+          onImageRemove={onImageRemove}
           onChartAdd={onChartAdd}
           animationConfig={animationConfig}
         />
@@ -85,6 +90,7 @@ export function LayoutRenderer({
           theme={theme}
           onContentChange={onContentChange}
           onImageReplace={onImageReplace}
+          onImageRemove={onImageRemove}
           onChartAdd={onChartAdd}
           animationConfig={animationConfig}
         />
@@ -106,6 +112,7 @@ export function LayoutRenderer({
           theme={theme}
           onContentChange={onContentChange}
           onImageReplace={onImageReplace}
+          onImageRemove={onImageRemove}
           onChartAdd={onChartAdd}
         />
       );
@@ -117,6 +124,7 @@ export function LayoutRenderer({
           theme={theme}
           onContentChange={onContentChange}
           onImageReplace={onImageReplace}
+          onImageRemove={onImageRemove}
           onChartAdd={onChartAdd}
         />
       );
@@ -128,6 +136,7 @@ export function LayoutRenderer({
           theme={theme}
           onContentChange={onContentChange}
           onImageReplace={onImageReplace}
+          onImageRemove={onImageRemove}
           onChartAdd={onChartAdd}
         />
       );
@@ -169,6 +178,7 @@ export function LayoutRenderer({
           theme={theme}
           onContentChange={onContentChange}
           onImageReplace={onImageReplace}
+          onImageRemove={onImageRemove}
           onChartAdd={onChartAdd}
           gridCount={2}
         />
@@ -181,6 +191,7 @@ export function LayoutRenderer({
           theme={theme}
           onContentChange={onContentChange}
           onImageReplace={onImageReplace}
+          onImageRemove={onImageRemove}
           onChartAdd={onChartAdd}
           gridCount={4}
         />
@@ -193,6 +204,7 @@ export function LayoutRenderer({
           theme={theme}
           onContentChange={onContentChange}
           onImageReplace={onImageReplace}
+          onImageRemove={onImageRemove}
           onChartAdd={onChartAdd}
           gridCount={6}
         />
@@ -205,6 +217,7 @@ export function LayoutRenderer({
           theme={theme}
           onContentChange={onContentChange}
           onImageReplace={onImageReplace}
+          onImageRemove={onImageRemove}
           animationConfig={animationConfig}
         />
       );
@@ -216,6 +229,7 @@ export function LayoutRenderer({
           theme={theme}
           onContentChange={onContentChange}
           onImageReplace={onImageReplace}
+          onImageRemove={onImageRemove}
           animationConfig={animationConfig}
         />
       );
@@ -227,6 +241,7 @@ export function LayoutRenderer({
           theme={theme}
           onContentChange={onContentChange}
           onImageReplace={onImageReplace}
+          onImageRemove={onImageRemove}
           onChartAdd={onChartAdd}
           animationConfig={animationConfig}
         />
@@ -239,6 +254,7 @@ export function LayoutRenderer({
           theme={theme}
           onContentChange={onContentChange}
           onImageReplace={onImageReplace}
+          onImageRemove={onImageRemove}
           onChartAdd={onChartAdd}
           animationConfig={animationConfig}
         />
