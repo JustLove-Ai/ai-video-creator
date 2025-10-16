@@ -16,7 +16,13 @@ export type LayoutType =
   | "steps5"
   | "imageGrid2"
   | "imageGrid4"
-  | "imageGrid6";
+  | "imageGrid6"
+  | "centeredImageMedium"
+  | "centeredImageLarge";
+
+// Image alignment options
+export type ImageAlignment = "top-left" | "top-center" | "top-right" | "center-left" | "center" | "center-right" | "bottom-left" | "bottom-center" | "bottom-right";
+export type ImageFit = "cover" | "contain" | "fill" | "none" | "scale-down";
 
 // Chart Data
 export interface ChartData {
@@ -47,6 +53,8 @@ export interface LayoutContent {
   leftColumn?: string;
   rightColumn?: string;
   imageBleed?: boolean; // When true, image stretches to edges (default: true)
+  imageAlignment?: ImageAlignment; // Default "center"
+  imageFit?: ImageFit; // Default "cover"
   chartData?: ChartData; // Chart data for chart layouts
   chartData2?: ChartData; // For comparison layout
   // Quote layout
@@ -90,7 +98,7 @@ export interface Theme {
 }
 
 // Annotation System
-export type AnnotationType = "freehand" | "arrow" | "rectangle" | "circle" | "line" | "text";
+export type AnnotationType = "freehand" | "arrow" | "rectangle" | "circle" | "line" | "text" | "eraser";
 
 export interface AnnotationElement {
   id: string;

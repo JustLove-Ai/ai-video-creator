@@ -8,20 +8,36 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { X, Upload, Sparkles, Image as ImageIcon, Trash2, Edit2 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { X, Upload, Sparkles, Image as ImageIcon, Trash2, Edit2, Settings } from "lucide-react";
 import { getImageLibrary, addImageToLibrary, deleteImageFromLibrary, ImageMetadata } from "@/lib/imageLibrary";
 import { generateImage } from "@/app/actions/openai";
 import { toast } from "sonner";
+
+import type { ImageAlignment, ImageFit } from "@/types";
 
 interface ImageUploadPanelProps {
   onClose: () => void;
   onImageSelect: (url: string) => void;
   imageBleed?: boolean;
   onImageBleedChange?: (bleed: boolean) => void;
+  imageAlignment?: ImageAlignment;
+  onImageAlignmentChange?: (alignment: ImageAlignment) => void;
+  imageFit?: ImageFit;
+  onImageFitChange?: (fit: ImageFit) => void;
 }
 
-export function ImageUploadPanel({ onClose, onImageSelect, imageBleed = false, onImageBleedChange }: ImageUploadPanelProps) {
-  const [activeTab, setActiveTab] = useState<"upload" | "ai" | "library">("library");
+export function ImageUploadPanel({
+  onClose,
+  onImageSelect,
+  imageBleed = false,
+  onImageBleedChange,
+  imageAlignment = "center",
+  onImageAlignmentChange,
+  imageFit = "cover",
+  onImageFitChange,
+}: ImageUploadPanelProps) {
+  const [activeTab, setActiveTab] = useState<"upload" | "ai" | "library" | "settings">("library");
   const [aiPrompt, setAiPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [imageLibrary, setImageLibrary] = useState<ImageMetadata[]>([]);
@@ -146,36 +162,47 @@ export function ImageUploadPanel({ onClose, onImageSelect, imageBleed = false, o
       <div className="flex border-b border-border">
         <button
           onClick={() => setActiveTab("library")}
-          className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+          className={`flex-1 px-3 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${
             activeTab === "library"
               ? "text-foreground border-b-2 border-primary bg-muted/50"
               : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
           }`}
         >
-          <ImageIcon className="h-4 w-4 inline mr-2" />
-          Library
+          <ImageIcon className="h-4 w-4" />
+          <span className="hidden sm:inline">Library</span>
         </button>
         <button
           onClick={() => setActiveTab("upload")}
-          className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+          className={`flex-1 px-3 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${
             activeTab === "upload"
               ? "text-foreground border-b-2 border-primary bg-muted/50"
               : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
           }`}
         >
-          <Upload className="h-4 w-4 inline mr-2" />
-          Upload
+          <Upload className="h-4 w-4" />
+          <span className="hidden sm:inline">Upload</span>
         </button>
         <button
           onClick={() => setActiveTab("ai")}
-          className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
+          className={`flex-1 px-3 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${
             activeTab === "ai"
               ? "text-foreground border-b-2 border-primary bg-muted/50"
               : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
           }`}
         >
-          <Sparkles className="h-4 w-4 inline mr-2" />
-          AI Generate
+          <Sparkles className="h-4 w-4" />
+          <span className="hidden sm:inline">AI</span>
+        </button>
+        <button
+          onClick={() => setActiveTab("settings")}
+          className={`flex-1 px-3 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${
+            activeTab === "settings"
+              ? "text-foreground border-b-2 border-primary bg-muted/50"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
+          }`}
+        >
+          <Settings className="h-4 w-4" />
+          <span className="hidden sm:inline">Settings</span>
         </button>
       </div>
 
@@ -341,11 +368,88 @@ export function ImageUploadPanel({ onClose, onImageSelect, imageBleed = false, o
             </div>
           )}
 
+          {activeTab === "settings" && (
+            <div className="space-y-6">
+              {/* Image Fit */}
+              {onImageFitChange && (
+                <div className="space-y-2">
+                  <Label htmlFor="image-fit" className="text-sm font-medium">
+                    Image Fit
+                  </Label>
+                  <Select value={imageFit} onValueChange={(value) => onImageFitChange(value as ImageFit)}>
+                    <SelectTrigger id="image-fit">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cover">Cover - Fill entire area</SelectItem>
+                      <SelectItem value="contain">Contain - Fit within area</SelectItem>
+                      <SelectItem value="fill">Fill - Stretch to fill</SelectItem>
+                      <SelectItem value="none">None - Original size</SelectItem>
+                      <SelectItem value="scale-down">Scale Down - Shrink if needed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    How the image should be sized within its container
+                  </p>
+                </div>
+              )}
+
+              {/* Image Alignment */}
+              {onImageAlignmentChange && (
+                <div className="space-y-2">
+                  <Label htmlFor="image-alignment" className="text-sm font-medium">
+                    Image Alignment
+                  </Label>
+                  <Select value={imageAlignment} onValueChange={(value) => onImageAlignmentChange(value as ImageAlignment)}>
+                    <SelectTrigger id="image-alignment">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="top-left">Top Left</SelectItem>
+                      <SelectItem value="top-center">Top Center</SelectItem>
+                      <SelectItem value="top-right">Top Right</SelectItem>
+                      <SelectItem value="center-left">Center Left</SelectItem>
+                      <SelectItem value="center">Center</SelectItem>
+                      <SelectItem value="center-right">Center Right</SelectItem>
+                      <SelectItem value="bottom-left">Bottom Left</SelectItem>
+                      <SelectItem value="bottom-center">Bottom Center</SelectItem>
+                      <SelectItem value="bottom-right">Bottom Right</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Position of the image within its container
+                  </p>
+                </div>
+              )}
+
+              {/* Image Bleed */}
+              {onImageBleedChange && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <Label htmlFor="image-bleed-settings" className="text-sm font-medium cursor-pointer">
+                        Image Bleed
+                      </Label>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Stretch image to edges without padding
+                      </p>
+                    </div>
+                    <Switch
+                      id="image-bleed-settings"
+                      checked={imageBleed}
+                      onCheckedChange={onImageBleedChange}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
         </div>
       </ScrollArea>
 
-      {/* Image Bleed Toggle (only show if callback is provided) */}
-      {onImageBleedChange && (
+      {/* Removed bottom Image Bleed Toggle - now in Settings tab */}
+      {false && onImageBleedChange && (
         <div className="p-4 border-t border-border bg-muted/30">
           <div className="flex items-center justify-between">
             <div className="flex-1">

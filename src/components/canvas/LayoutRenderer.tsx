@@ -14,6 +14,8 @@ import { ComparisonLayout } from "@/components/layouts/ComparisonLayout";
 import { QuoteLayout } from "@/components/layouts/QuoteLayout";
 import { StepsLayout } from "@/components/layouts/StepsLayout";
 import { ImageGridLayout } from "@/components/layouts/ImageGridLayout";
+import { CenteredImageMediumLayout } from "@/components/layouts/CenteredImageMediumLayout";
+import { CenteredImageLargeLayout } from "@/components/layouts/CenteredImageLargeLayout";
 
 interface LayoutRendererProps {
   layoutType: LayoutType;
@@ -191,6 +193,28 @@ export function LayoutRenderer({
           onImageReplace={onImageReplace}
           onChartAdd={onChartAdd}
           gridCount={6}
+        />
+      );
+
+    case "centeredImageMedium":
+      return (
+        <CenteredImageMediumLayout
+          content={content}
+          theme={theme}
+          onContentChange={onContentChange}
+          onImageReplace={onImageReplace}
+          animationConfig={animationConfig}
+        />
+      );
+
+    case "centeredImageLarge":
+      return (
+        <CenteredImageLargeLayout
+          content={content}
+          theme={theme}
+          onContentChange={onContentChange}
+          onImageReplace={onImageReplace}
+          animationConfig={animationConfig}
         />
       );
 

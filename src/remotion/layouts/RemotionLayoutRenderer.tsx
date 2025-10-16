@@ -2,6 +2,8 @@ import { AbsoluteFill } from 'remotion';
 import { RemotionImage } from '../RemotionImage';
 import type { Scene, Theme, LayoutContent } from '@/types';
 import { getBackgroundStyle } from '@/lib/themes';
+import { useRemotionAnimation } from '../animationHelpers';
+import { getElementAnimation } from '@/lib/animationHelpers';
 
 interface RemotionLayoutRendererProps {
   scene: Scene;
@@ -11,6 +13,15 @@ interface RemotionLayoutRendererProps {
 export function RemotionLayoutRenderer({ scene, theme }: RemotionLayoutRendererProps) {
   const layoutContent = scene.layoutContent as LayoutContent;
   const mergedTheme = scene.themeOverride ? { ...theme, ...scene.themeOverride } : theme;
+
+  // Get animation styles for each element
+  const titleAnimation = useRemotionAnimation(getElementAnimation(scene.animationConfig, 'title'));
+  const subtitleAnimation = useRemotionAnimation(getElementAnimation(scene.animationConfig, 'subtitle'));
+  const bodyAnimation = useRemotionAnimation(getElementAnimation(scene.animationConfig, 'body'));
+  const imageAnimation = useRemotionAnimation(getElementAnimation(scene.animationConfig, 'image'));
+  const leftColumnAnimation = useRemotionAnimation(getElementAnimation(scene.animationConfig, 'leftColumn'));
+  const rightColumnAnimation = useRemotionAnimation(getElementAnimation(scene.animationConfig, 'rightColumn'));
+  const bulletPointsAnimation = useRemotionAnimation(getElementAnimation(scene.animationConfig, 'bulletPoints'));
 
   // Get background style
   const backgroundStyle = getBackgroundStyle(mergedTheme);
@@ -57,12 +68,12 @@ export function RemotionLayoutRenderer({ scene, theme }: RemotionLayoutRendererP
             textAlign: 'center'
           }}>
             {layoutContent.title && (
-              <div style={{ ...titleStyle, maxWidth: '80%' }}>
+              <div style={{ ...titleStyle, ...titleAnimation, maxWidth: '80%' }}>
                 {layoutContent.title}
               </div>
             )}
             {layoutContent.subtitle && (
-              <div style={{ ...subtitleStyle, maxWidth: '70%', marginTop: gap }}>
+              <div style={{ ...subtitleStyle, ...subtitleAnimation, maxWidth: '70%', marginTop: gap }}>
                 {layoutContent.subtitle}
               </div>
             )}
@@ -75,7 +86,7 @@ export function RemotionLayoutRenderer({ scene, theme }: RemotionLayoutRendererP
         <AbsoluteFill style={{ ...backgroundStyle, padding: layoutContent.imageBleed ? 0 : padding }}>
           <div style={{ display: 'flex', height: '100%', gap: layoutContent.imageBleed ? 0 : gap, alignItems: 'center' }}>
             {/* Left: Image (40%) */}
-            <div style={{ flex: '0 0 40%', height: layoutContent.imageBleed ? '100%' : 'auto' }}>
+            <div style={{ flex: '0 0 40%', height: layoutContent.imageBleed ? '100%' : 'auto', ...imageAnimation }}>
               {layoutContent.imageUrl && (
                 <RemotionImage
                   src={layoutContent.imageUrl}
@@ -92,10 +103,10 @@ export function RemotionLayoutRenderer({ scene, theme }: RemotionLayoutRendererP
             {/* Right: Text (60%) */}
             <div style={{ flex: '1', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: layoutContent.imageBleed ? padding : 0 }}>
               {layoutContent.title && (
-                <div style={titleStyle}>{layoutContent.title}</div>
+                <div style={{ ...titleStyle, ...titleAnimation }}>{layoutContent.title}</div>
               )}
               {layoutContent.body && (
-                <div style={{ ...bodyStyle, marginTop: gap }}>{layoutContent.body}</div>
+                <div style={{ ...bodyStyle, ...bodyAnimation, marginTop: gap }}>{layoutContent.body}</div>
               )}
             </div>
           </div>
@@ -109,14 +120,14 @@ export function RemotionLayoutRenderer({ scene, theme }: RemotionLayoutRendererP
             {/* Left: Text (60%) */}
             <div style={{ flex: '1', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: layoutContent.imageBleed ? padding : 0 }}>
               {layoutContent.title && (
-                <div style={titleStyle}>{layoutContent.title}</div>
+                <div style={{ ...titleStyle, ...titleAnimation }}>{layoutContent.title}</div>
               )}
               {layoutContent.body && (
-                <div style={{ ...bodyStyle, marginTop: gap }}>{layoutContent.body}</div>
+                <div style={{ ...bodyStyle, ...bodyAnimation, marginTop: gap }}>{layoutContent.body}</div>
               )}
             </div>
             {/* Right: Image (40%) */}
-            <div style={{ flex: '0 0 40%', height: layoutContent.imageBleed ? '100%' : 'auto' }}>
+            <div style={{ flex: '0 0 40%', height: layoutContent.imageBleed ? '100%' : 'auto', ...imageAnimation }}>
               {layoutContent.imageUrl && (
                 <RemotionImage
                   src={layoutContent.imageUrl}
@@ -146,10 +157,10 @@ export function RemotionLayoutRenderer({ scene, theme }: RemotionLayoutRendererP
             margin: '0 auto'
           }}>
             {layoutContent.title && (
-              <div style={{ ...titleStyle, textAlign: 'center' }}>{layoutContent.title}</div>
+              <div style={{ ...titleStyle, ...titleAnimation, textAlign: 'center' }}>{layoutContent.title}</div>
             )}
             {layoutContent.body && (
-              <div style={{ ...bodyStyle, marginTop: gap, textAlign: 'center' }}>{layoutContent.body}</div>
+              <div style={{ ...bodyStyle, ...bodyAnimation, marginTop: gap, textAlign: 'center' }}>{layoutContent.body}</div>
             )}
           </div>
         </AbsoluteFill>
@@ -160,7 +171,7 @@ export function RemotionLayoutRenderer({ scene, theme }: RemotionLayoutRendererP
         <AbsoluteFill style={{ ...backgroundStyle, padding }}>
           <div style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'center', gap }}>
             {layoutContent.imageUrl && (
-              <div style={{ textAlign: 'center' }}>
+              <div style={{ textAlign: 'center', ...imageAnimation }}>
                 <RemotionImage
                   src={layoutContent.imageUrl}
                   alt="Scene image"
@@ -174,7 +185,7 @@ export function RemotionLayoutRenderer({ scene, theme }: RemotionLayoutRendererP
               </div>
             )}
             {layoutContent.bulletPoints && layoutContent.bulletPoints.length > 0 && (
-              <div style={{ maxWidth: '70%', margin: '0 auto' }}>
+              <div style={{ maxWidth: '70%', margin: '0 auto', ...bulletPointsAnimation }}>
                 {layoutContent.bulletPoints.map((bullet, index) => (
                   <div key={index} style={{ display: 'flex', marginBottom: '12px', ...bodyStyle }}>
                     <span style={{ marginRight: '12px', color: mergedTheme.colors?.accent || '#60a5fa' }}>•</span>
@@ -191,11 +202,13 @@ export function RemotionLayoutRenderer({ scene, theme }: RemotionLayoutRendererP
       return (
         <AbsoluteFill style={{ ...backgroundStyle }}>
           {layoutContent.imageUrl && (
-            <RemotionImage
-              src={layoutContent.imageUrl}
-              alt="Scene image"
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            />
+            <div style={imageAnimation}>
+              <RemotionImage
+                src={layoutContent.imageUrl}
+                alt="Scene image"
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+            </div>
           )}
           <div style={{
             position: 'absolute',
@@ -206,10 +219,10 @@ export function RemotionLayoutRenderer({ scene, theme }: RemotionLayoutRendererP
             background: 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)'
           }}>
             {layoutContent.title && (
-              <div style={{ ...titleStyle, textAlign: 'center' }}>{layoutContent.title}</div>
+              <div style={{ ...titleStyle, ...titleAnimation, textAlign: 'center' }}>{layoutContent.title}</div>
             )}
             {layoutContent.subtitle && (
-              <div style={{ ...subtitleStyle, textAlign: 'center', marginTop: gap / 2 }}>{layoutContent.subtitle}</div>
+              <div style={{ ...subtitleStyle, ...subtitleAnimation, textAlign: 'center', marginTop: gap / 2 }}>{layoutContent.subtitle}</div>
             )}
           </div>
         </AbsoluteFill>
@@ -221,13 +234,13 @@ export function RemotionLayoutRenderer({ scene, theme }: RemotionLayoutRendererP
           <div style={{ display: 'flex', height: '100%', gap, alignItems: 'center' }}>
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
               {layoutContent.leftColumn && (
-                <div style={bodyStyle}>{layoutContent.leftColumn}</div>
+                <div style={{ ...bodyStyle, ...leftColumnAnimation }}>{layoutContent.leftColumn}</div>
               )}
             </div>
             <div style={{ width: '2px', backgroundColor: mergedTheme.colors?.accent || '#60a5fa', height: '60%' }} />
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
               {layoutContent.rightColumn && (
-                <div style={bodyStyle}>{layoutContent.rightColumn}</div>
+                <div style={{ ...bodyStyle, ...rightColumnAnimation }}>{layoutContent.rightColumn}</div>
               )}
             </div>
           </div>

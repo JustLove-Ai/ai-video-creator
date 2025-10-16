@@ -137,6 +137,15 @@ export function parseScriptToLayout(
         imageBleed: true,
       };
 
+    case "centeredImageMedium":
+    case "centeredImageLarge":
+      return {
+        title: sentences[0] || "Untitled Slide",
+        imageUrl: "",
+        imageAlignment: "center",
+        imageFit: "cover",
+      };
+
     default:
       return {
         title: sentences[0] || "Untitled Slide",
@@ -152,6 +161,8 @@ export function getLayoutName(layoutType: LayoutType): string {
     imageRight: "Image Right",
     imageBullets: "Image with Bullets",
     fullImage: "Full Image",
+    centeredImageMedium: "Centered Medium",
+    centeredImageLarge: "Centered Large",
     twoColumn: "Two Column",
     titleBody: "Title & Body",
     blank: "Blank",
@@ -176,6 +187,8 @@ export function getLayoutDescription(layoutType: LayoutType): string {
     imageRight: "Text on left, image on right",
     imageBullets: "Image with bullet points",
     fullImage: "Full-width image with overlay text",
+    centeredImageMedium: "Medium centered image with title",
+    centeredImageLarge: "Large centered image with title",
     twoColumn: "Two columns of text",
     titleBody: "Large title with body text",
     blank: "Start from scratch",

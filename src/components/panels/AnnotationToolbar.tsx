@@ -17,6 +17,7 @@ import {
   Circle,
   Minus,
   Type,
+  Eraser,
 } from "lucide-react";
 import { AnnotationType } from "@/types";
 
@@ -47,6 +48,7 @@ const tools: { id: AnnotationType; label: string; icon: React.ReactNode }[] = [
   { id: "circle", label: "Circle", icon: <Circle className="h-4 w-4" /> },
   { id: "line", label: "Line", icon: <Minus className="h-4 w-4" /> },
   { id: "text", label: "Text", icon: <Type className="h-4 w-4" /> },
+  { id: "eraser", label: "Eraser", icon: <Eraser className="h-4 w-4" /> },
 ];
 
 export function AnnotationToolbar({

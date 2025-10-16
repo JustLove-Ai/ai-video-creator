@@ -23,6 +23,8 @@ const layouts: LayoutType[] = [
   "imageRight",
   "imageBullets",
   "fullImage",
+  "centeredImageMedium",
+  "centeredImageLarge",
   "twoColumn",
   "titleBody",
   "quote",
@@ -55,8 +57,9 @@ export function LayoutPanel({ currentLayout, currentContent, onLayoutSelect, onC
         </Button>
       </div>
 
-      {/* Layouts Grid */}
+      {/* Scrollable Content */}
       <ScrollArea className="flex-1">
+        {/* Layouts Grid */}
         <div className="p-4 grid grid-cols-2 gap-3">
           {layouts.map((layout) => {
             const isActive = currentLayout === layout;
@@ -218,6 +221,18 @@ export function LayoutPanel({ currentLayout, currentContent, onLayoutSelect, onC
                       <div className="bg-foreground/30 rounded"></div>
                     </div>
                   )}
+                  {layout === "centeredImageMedium" && (
+                    <div className="h-full flex flex-col items-center justify-center gap-1 p-2">
+                      <div className="w-3/4 h-1.5 bg-foreground/80 rounded"></div>
+                      <div className="w-1/2 aspect-video bg-foreground/30 rounded mt-1"></div>
+                    </div>
+                  )}
+                  {layout === "centeredImageLarge" && (
+                    <div className="h-full flex flex-col items-center justify-center gap-1 p-2">
+                      <div className="w-3/4 h-1.5 bg-foreground/80 rounded"></div>
+                      <div className="w-4/5 aspect-video bg-foreground/30 rounded mt-1"></div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Active Indicator */}
@@ -235,11 +250,10 @@ export function LayoutPanel({ currentLayout, currentContent, onLayoutSelect, onC
             );
           })}
         </div>
-      </ScrollArea>
 
-      {/* Layout Settings */}
-      <div className="p-4 border-t border-border space-y-3">
-        <div className="text-sm font-semibold mb-2">Layout Options</div>
+        {/* Layout Settings */}
+        <div className="p-4 border-t border-border space-y-3">
+          <div className="text-sm font-semibold mb-2">Layout Options</div>
 
         {/* Visibility Toggles based on current layout */}
         {(currentLayout === "cover" || currentLayout === "imageLeft" || currentLayout === "imageRight" ||
@@ -368,14 +382,15 @@ export function LayoutPanel({ currentLayout, currentContent, onLayoutSelect, onC
             </p>
           </>
         )}
-      </div>
+        </div>
 
-      {/* Info */}
-      <div className="p-4 border-t border-border bg-muted/30">
-        <p className="text-xs text-muted-foreground">
-          {getLayoutDescription(currentLayout)}
-        </p>
-      </div>
+        {/* Info */}
+        <div className="p-4 border-t border-border bg-muted/30">
+          <p className="text-xs text-muted-foreground">
+            {getLayoutDescription(currentLayout)}
+          </p>
+        </div>
+      </ScrollArea>
     </motion.div>
   );
 }

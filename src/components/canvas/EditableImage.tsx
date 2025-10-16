@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Image as ImageIcon } from "lucide-react";
-import { ElementAnimation } from "@/types";
+import { ElementAnimation, ImageAlignment, ImageFit } from "@/types";
 import { getAnimationProps } from "@/lib/animations";
 
 interface EditableImageProps {
@@ -13,6 +13,8 @@ interface EditableImageProps {
   style?: React.CSSProperties;
   aspectRatio?: string;
   bleed?: boolean; // When true, image fills container completely
+  alignment?: ImageAlignment; // Default "center"
+  fit?: ImageFit; // Default "cover"
   animation?: ElementAnimation;
   onElementClick?: () => void;
 }
@@ -25,6 +27,8 @@ export function EditableImage({
   style = {},
   aspectRatio = "16/9",
   bleed = false,
+  alignment = "center",
+  fit = "cover",
   animation,
   onElementClick,
 }: EditableImageProps) {
@@ -36,6 +40,22 @@ export function EditableImage({
       e.stopPropagation();
       onElementClick();
     }
+  };
+
+  // Convert alignment to object-position CSS property
+  const getObjectPosition = (alignment: ImageAlignment): string => {
+    const positionMap: Record<ImageAlignment, string> = {
+      "top-left": "top left",
+      "top-center": "top center",
+      "top-right": "top right",
+      "center-left": "center left",
+      "center": "center center",
+      "center-right": "center right",
+      "bottom-left": "bottom left",
+      "bottom-center": "bottom center",
+      "bottom-right": "bottom right",
+    };
+    return positionMap[alignment];
   };
 
   if (!src) {
@@ -59,7 +79,15 @@ export function EditableImage({
       style={{ ...style, aspectRatio: bleed ? undefined : aspectRatio }}
       onClick={handleClick}
     >
-      <img src={src} alt={alt} className={`w-full h-full object-cover`} />
+      <img
+        src={src}
+        alt={alt}
+        className={`w-full h-full`}
+        style={{
+          objectFit: fit,
+          objectPosition: getObjectPosition(alignment),
+        }}
+      />
       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all flex items-center justify-center">
         <ImageIcon className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
       </div>

@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { AnnotationElement, AnnotationType } from "@/types";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { X } from "lucide-react";
 
 interface AnnotationLayerProps {
@@ -23,7 +24,13 @@ export function AnnotationLayer({
   const [isDrawing, setIsDrawing] = useState(false);
   const [currentAnnotation, setCurrentAnnotation] = useState<AnnotationElement | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [editingTextId, setEditingTextId] = useState<string | null>(null);
+  const [editingTextValue, setEditingTextValue] = useState<string>("");
+  const [isDragging, setIsDragging] = useState(false);
+  const [draggedId, setDraggedId] = useState<string | null>(null);
+  const [dragOffset, setDragOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const svgRef = useRef<SVGSVGElement>(null);
+  const textInputRef = useRef<HTMLInputElement>(null);
 
   const getMousePosition = (e: React.MouseEvent<SVGSVGElement>): { x: number; y: number } => {
     if (!svgRef.current) return { x: 0, y: 0 };
@@ -36,6 +43,12 @@ export function AnnotationLayer({
 
   const handleMouseDown = (e: React.MouseEvent<SVGSVGElement>) => {
     if (!activeTool) return;
+
+    // Eraser mode doesn't create new annotations
+    if (activeTool === "eraser") {
+      setIsDrawing(true);
+      return;
+    }
 
     const pos = getMousePosition(e);
     setIsDrawing(true);
@@ -55,6 +68,13 @@ export function AnnotationLayer({
   };
 
   const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    // Handle dragging
+    if (isDragging) {
+      handleDragMove(e);
+      return;
+    }
+
+    // Handle drawing
     if (!isDrawing || !currentAnnotation) return;
 
     const pos = getMousePosition(e);
@@ -83,8 +103,22 @@ export function AnnotationLayer({
   };
 
   const handleMouseUp = () => {
+    // Handle drag end
+    if (isDragging) {
+      handleDragEnd();
+      return;
+    }
+
+    // Handle drawing end
     if (currentAnnotation) {
       onAnnotationsChange([...annotations, currentAnnotation]);
+
+      // If it's a text annotation, immediately enter edit mode
+      if (currentAnnotation.type === "text") {
+        setEditingTextId(currentAnnotation.id);
+        setEditingTextValue(currentAnnotation.text || "");
+      }
+
       setCurrentAnnotation(null);
     }
     setIsDrawing(false);
@@ -95,12 +129,140 @@ export function AnnotationLayer({
     setSelectedId(null);
   };
 
+  const handleAnnotationClick = (e: React.MouseEvent, annotationId: string) => {
+    e.stopPropagation();
+
+    // If eraser is active, delete the annotation
+    if (activeTool === "eraser") {
+      deleteAnnotation(annotationId);
+      return;
+    }
+
+    const annotation = annotations.find((a) => a.id === annotationId);
+
+    // If it's a text annotation and not eraser mode, enter edit mode
+    if (annotation && annotation.type === "text") {
+      setEditingTextId(annotationId);
+      setEditingTextValue(annotation.text || "");
+      setSelectedId(null);
+    } else {
+      // Otherwise, select it
+      setSelectedId(annotationId);
+    }
+  };
+
+  const handleAnnotationMouseDown = (e: React.MouseEvent, annotationId: string) => {
+    // Only start dragging if no drawing tool is active
+    if (activeTool && activeTool !== "eraser") return;
+    if (activeTool === "eraser") return;
+
+    e.stopPropagation();
+
+    const annotation = annotations.find((a) => a.id === annotationId);
+    if (!annotation) return;
+
+    // Don't drag text annotations that are being edited
+    if (editingTextId === annotationId) return;
+
+    const pos = getMousePosition(e as any);
+    setIsDragging(true);
+    setDraggedId(annotationId);
+    setDragOffset({
+      x: pos.x - annotation.x,
+      y: pos.y - annotation.y,
+    });
+  };
+
+  const handleDragMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    if (!isDragging || !draggedId) return;
+
+    const pos = getMousePosition(e);
+    const newX = pos.x - dragOffset.x;
+    const newY = pos.y - dragOffset.y;
+
+    // Update the annotation position in real-time
+    onAnnotationsChange(
+      annotations.map((a) => {
+        if (a.id === draggedId) {
+          // For shapes with endpoints (line, arrow), adjust them too
+          if (a.type === "line" || a.type === "arrow") {
+            const deltaX = newX - a.x;
+            const deltaY = newY - a.y;
+            return {
+              ...a,
+              x: newX,
+              y: newY,
+              endX: (a.endX || a.x) + deltaX,
+              endY: (a.endY || a.y) + deltaY,
+            };
+          }
+          // For freehand, adjust all points
+          if (a.type === "freehand" && a.points) {
+            const deltaX = newX - a.x;
+            const deltaY = newY - a.y;
+            return {
+              ...a,
+              x: newX,
+              y: newY,
+              points: a.points.map((p) => ({
+                x: p.x + deltaX,
+                y: p.y + deltaY,
+              })),
+            };
+          }
+          // For other shapes, just move the origin
+          return { ...a, x: newX, y: newY };
+        }
+        return a;
+      })
+    );
+  };
+
+  const handleDragEnd = () => {
+    setIsDragging(false);
+    setDraggedId(null);
+  };
+
+  const updateTextAnnotation = (id: string, newText: string) => {
+    onAnnotationsChange(
+      annotations.map((a) =>
+        a.id === id ? { ...a, text: newText } : a
+      )
+    );
+    setEditingTextId(null);
+    setEditingTextValue("");
+  };
+
+  // Focus input when editing starts
+  useEffect(() => {
+    if (editingTextId && textInputRef.current) {
+      textInputRef.current.focus();
+    }
+  }, [editingTextId]);
+
   const renderAnnotation = (annotation: AnnotationElement, isTemp = false) => {
+    const isBeingDragged = draggedId === annotation.id;
+    const isSelected = selectedId === annotation.id;
+
     const commonProps = {
       stroke: annotation.stroke,
       strokeWidth: annotation.strokeWidth,
-      opacity: annotation.opacity,
+      opacity: isBeingDragged ? 0.7 : annotation.opacity,
       fill: annotation.fill || "none",
+    };
+
+    const interactiveProps = isTemp ? {} : {
+      onClick: (e: React.MouseEvent) => handleAnnotationClick(e, annotation.id),
+      onMouseDown: (e: React.MouseEvent) => handleAnnotationMouseDown(e, annotation.id),
+      className: activeTool === "eraser"
+        ? "cursor-pointer hover:opacity-50"
+        : !activeTool
+          ? "cursor-move hover:opacity-80"
+          : "cursor-pointer",
+      style: {
+        pointerEvents: "auto" as const,
+        ...(isSelected && !isBeingDragged ? { filter: "drop-shadow(0 0 3px rgba(59, 130, 246, 0.8))" } : {}),
+      },
     };
 
     switch (annotation.type) {
@@ -114,6 +276,7 @@ export function AnnotationLayer({
             key={annotation.id}
             d={pathData}
             {...commonProps}
+            {...interactiveProps}
             strokeLinecap="round"
             strokeLinejoin="round"
           />
@@ -128,6 +291,7 @@ export function AnnotationLayer({
             x2={annotation.endX || annotation.x}
             y2={annotation.endY || annotation.y}
             {...commonProps}
+            {...interactiveProps}
             strokeLinecap="round"
           />
         );
@@ -140,7 +304,7 @@ export function AnnotationLayer({
         const arrowWidth = 10;
 
         return (
-          <g key={annotation.id}>
+          <g key={annotation.id} {...interactiveProps}>
             <line
               x1={annotation.x}
               y1={annotation.y}
@@ -172,11 +336,7 @@ export function AnnotationLayer({
             width={Math.abs(annotation.width || 0)}
             height={Math.abs(annotation.height || 0)}
             {...commonProps}
-            onClick={(e) => {
-              e.stopPropagation();
-              setSelectedId(annotation.id);
-            }}
-            className="cursor-pointer"
+            {...interactiveProps}
           />
         );
 
@@ -193,15 +353,16 @@ export function AnnotationLayer({
             rx={rx}
             ry={ry}
             {...commonProps}
-            onClick={(e) => {
-              e.stopPropagation();
-              setSelectedId(annotation.id);
-            }}
-            className="cursor-pointer"
+            {...interactiveProps}
           />
         );
 
       case "text":
+        // If this text is being edited, render an input instead
+        if (editingTextId === annotation.id) {
+          return null; // The input will be rendered separately in the return JSX
+        }
+
         return (
           <text
             key={annotation.id}
@@ -210,11 +371,9 @@ export function AnnotationLayer({
             fill={annotation.stroke}
             fontSize={annotation.fontSize || 24}
             opacity={annotation.opacity}
-            onClick={(e) => {
-              e.stopPropagation();
-              setSelectedId(annotation.id);
-            }}
-            className="cursor-pointer"
+            fontFamily="var(--font-caveat), 'Comic Sans MS', cursive"
+            fontWeight="500"
+            {...interactiveProps}
           >
             {annotation.text || "Text"}
           </text>
@@ -225,6 +384,8 @@ export function AnnotationLayer({
     }
   };
 
+  const editingAnnotation = annotations.find((a) => a.id === editingTextId);
+
   return (
     <div className="absolute inset-0 pointer-events-none">
       <svg
@@ -234,11 +395,52 @@ export function AnnotationLayer({
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
-        style={{ cursor: activeTool ? "crosshair" : "default" }}
+        style={{
+          cursor: isDragging
+            ? "grabbing"
+            : activeTool === "eraser"
+              ? "pointer"
+              : activeTool
+                ? "crosshair"
+                : "default",
+        }}
       >
         {annotations.map((annotation) => renderAnnotation(annotation))}
         {currentAnnotation && renderAnnotation(currentAnnotation, true)}
       </svg>
+
+      {/* Editable text input */}
+      {editingTextId && editingAnnotation && (
+        <div
+          className="absolute pointer-events-auto"
+          style={{
+            left: `${editingAnnotation.x}px`,
+            top: `${editingAnnotation.y - 30}px`,
+          }}
+        >
+          <Input
+            ref={textInputRef}
+            value={editingTextValue}
+            onChange={(e) => setEditingTextValue(e.target.value)}
+            onBlur={() => updateTextAnnotation(editingTextId, editingTextValue)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                updateTextAnnotation(editingTextId, editingTextValue);
+              } else if (e.key === "Escape") {
+                setEditingTextId(null);
+                setEditingTextValue("");
+              }
+            }}
+            className="min-w-[200px] h-10 text-lg"
+            style={{
+              fontFamily: "var(--font-caveat), 'Comic Sans MS', cursive",
+              fontWeight: "500",
+              color: editingAnnotation.stroke,
+            }}
+            placeholder="Enter text..."
+          />
+        </div>
+      )}
 
       {/* Delete button for selected annotation */}
       {selectedId && (

@@ -514,7 +514,7 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
             <ImageUploadPanel
               onClose={() => setRightPanel(null)}
               onImageSelect={handleImageSelect}
-              imageBleed={activeScene.layoutContent.imageBleed || false}
+              imageBleed={activeScene.layoutContent.imageBleed !== undefined ? activeScene.layoutContent.imageBleed : true}
               onImageBleedChange={(bleed) => {
                 console.log('🔄 Updating image bleed:', bleed);
                 const updatedLayoutContent = { ...activeScene.layoutContent, imageBleed: bleed };
@@ -537,6 +537,56 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
                     toast.success(bleed ? "Image bleed enabled" : "Image bleed disabled");
                   } catch (error) {
                     console.error("Failed to update image bleed:", error);
+                    toast.error("Failed to save changes");
+                  }
+                });
+              }}
+              imageAlignment={activeScene.layoutContent.imageAlignment || "center"}
+              onImageAlignmentChange={(alignment) => {
+                const updatedLayoutContent = { ...activeScene.layoutContent, imageAlignment: alignment };
+
+                setScenes((prev) =>
+                  prev.map((s) =>
+                    s.id === activeSceneId
+                      ? { ...s, layoutContent: updatedLayoutContent }
+                      : s
+                  )
+                );
+
+                // Also save to database
+                startTransition(async () => {
+                  try {
+                    await updateScene(activeSceneId, {
+                      layoutContent: updatedLayoutContent as Prisma.InputJsonValue,
+                    });
+                    toast.success("Image alignment updated");
+                  } catch (error) {
+                    console.error("Failed to update image alignment:", error);
+                    toast.error("Failed to save changes");
+                  }
+                });
+              }}
+              imageFit={activeScene.layoutContent.imageFit || "cover"}
+              onImageFitChange={(fit) => {
+                const updatedLayoutContent = { ...activeScene.layoutContent, imageFit: fit };
+
+                setScenes((prev) =>
+                  prev.map((s) =>
+                    s.id === activeSceneId
+                      ? { ...s, layoutContent: updatedLayoutContent }
+                      : s
+                  )
+                );
+
+                // Also save to database
+                startTransition(async () => {
+                  try {
+                    await updateScene(activeSceneId, {
+                      layoutContent: updatedLayoutContent as Prisma.InputJsonValue,
+                    });
+                    toast.success("Image fit updated");
+                  } catch (error) {
+                    console.error("Failed to update image fit:", error);
                     toast.error("Failed to save changes");
                   }
                 });

@@ -17,7 +17,8 @@ import {
   Sparkles,
   Play,
   FileText,
-  Mic
+  Mic,
+  Copy
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -30,7 +31,7 @@ import { Scene, Theme, LayoutType, AnnotationElement, LayoutContent } from "@/ty
 import { parseScriptToLayout } from "@/lib/layouts";
 import { YOUTUBE_SCRIPT_PROMPT, AI_GENERATION_SYSTEM_PROMPT } from "@/lib/constants";
 import { generateYouTubeScript, generateSceneContent, generateSpeech, importUserScript } from "@/app/actions/openai";
-import { createScene, updateScene, deleteScene, deleteAllScenes } from "@/app/actions/scenes";
+import { createScene, updateScene, deleteScene, deleteAllScenes, duplicateScene } from "@/app/actions/scenes";
 import { getProject } from "@/app/actions/projects";
 import { getAudioDuration } from "@/lib/audioUtils";
 import { VoiceRecorder } from "@/components/VoiceRecorder";
@@ -265,6 +266,47 @@ export function LeftSidebar({
         await deleteScene(sceneId);
       } catch (error) {
         console.error("Failed to delete scene:", error);
+      }
+    });
+  };
+
+  const handleDuplicateScene = (sceneId: string) => {
+    if (!projectId) return;
+
+    startTransition(async () => {
+      try {
+        // Use the existing duplicateScene action
+        const newScene = await duplicateScene(sceneId);
+
+        // Convert to Scene type
+        const sceneForState: Scene = {
+          id: newScene.id,
+          content: newScene.content,
+          duration: newScene.duration,
+          layout: newScene.layout as LayoutType,
+          layoutContent: newScene.layoutContent as LayoutContent,
+          annotations: (newScene.annotations as unknown as AnnotationElement[]) || [],
+          themeOverride: (newScene.themeOverride as unknown) as Partial<Theme> | undefined,
+          audioUrl: newScene.audioUrl || undefined,
+          recordedAudioUrl: newScene.recordedAudioUrl || undefined,
+          animationConfig: (newScene.animationConfig as any) || undefined,
+        };
+
+        // Insert the duplicated scene right after the original
+        const sceneIndex = scenes.findIndex(s => s.id === sceneId);
+        const newScenes = [...scenes];
+        newScenes.splice(sceneIndex + 1, 0, sceneForState);
+        setScenes(newScenes);
+
+        // Set the new scene as active
+        setActiveSceneId(newScene.id);
+
+        toast.success("Scene duplicated successfully");
+      } catch (error) {
+        console.error("Failed to duplicate scene:", error);
+        toast.error("Failed to duplicate scene", {
+          description: "Please try again."
+        });
       }
     });
   };
@@ -696,6 +738,18 @@ export function LeftSidebar({
                           }}
                         >
                           <Sparkles className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDuplicateScene(scene.id);
+                          }}
+                          title="Duplicate scene"
+                        >
+                          <Copy className="h-3 w-3" />
                         </Button>
                         <Button
                           variant="ghost"
