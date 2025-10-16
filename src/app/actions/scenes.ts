@@ -124,18 +124,24 @@ export async function duplicateScene(sceneId: string): Promise<Scene> {
 
   if (!originalScene) throw new Error("Scene not found");
 
-  // Get the highest order number
-  const lastScene = await prisma.scene.findFirst({
-    where: { projectId: originalScene.projectId },
-    orderBy: { order: "desc" },
+  // Shift all scenes after the original scene up by 1
+  await prisma.scene.updateMany({
+    where: {
+      projectId: originalScene.projectId,
+      order: { gt: originalScene.order },
+    },
+    data: {
+      order: { increment: 1 },
+    },
   });
 
-  const order = (lastScene?.order ?? -1) + 1;
+  // Create the new scene right after the original scene
+  const newOrder = originalScene.order + 1;
 
   const newScene = await prisma.scene.create({
     data: {
       projectId: originalScene.projectId,
-      order,
+      order: newOrder,
       content: originalScene.content,
       duration: originalScene.duration,
       layout: originalScene.layout,
