@@ -61,6 +61,7 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
   const [exportVideoUrl, setExportVideoUrl] = useState<string>("");
   const [showBeautifyModal, setShowBeautifyModal] = useState(false);
   const [animationKey, setAnimationKey] = useState(0); // Force animation replay
+  const [isSaving, setIsSaving] = useState(false);
 
   // Video and Audio Settings
   const [videoSettings, setVideoSettings] = useState<VideoSettings>({
@@ -83,8 +84,10 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
     pitch: 1.0,
   });
 
-  // Debounce timer ref (must be declared before useEffect)
+  // Debounce timer refs and abort controller (must be declared before useEffect)
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const layoutContentTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const exportAbortControllerRef = useRef<AbortController | null>(null);
 
   // Load project on mount
   useEffect(() => {
@@ -155,6 +158,18 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
 
     initializeProject();
   }, [projectId]);
+
+  // Cleanup timers on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
+      }
+      if (layoutContentTimerRef.current) {
+        clearTimeout(layoutContentTimerRef.current);
+      }
+    };
+  }, []);
 
   const activeScene = scenes.find((s) => s.id === activeSceneId);
 
@@ -257,6 +272,33 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
         }
       });
     }, 1000); // Wait 1 second after last edit
+  };
+
+  // Handle layout content change with debouncing
+  const handleLayoutContentChange = (content: Scene["layoutContent"]) => {
+    // Update local state immediately
+    setScenes((prev) =>
+      prev.map((s) =>
+        s.id === activeSceneId ? { ...s, layoutContent: content } : s
+      )
+    );
+
+    // Debounce database save (wait 500ms after last change)
+    if (layoutContentTimerRef.current) {
+      clearTimeout(layoutContentTimerRef.current);
+    }
+
+    layoutContentTimerRef.current = setTimeout(() => {
+      startTransition(async () => {
+        try {
+          await updateScene(activeSceneId, {
+            layoutContent: content as Prisma.InputJsonValue,
+          });
+        } catch (error) {
+          console.error("Failed to update layout content:", error);
+        }
+      });
+    }, 500); // Wait 500ms after last change
   };
 
   // Handle image upload/selection
@@ -406,6 +448,7 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
       return;
     }
 
+    setIsSaving(true);
     try {
       // Save project settings (theme, video settings, audio settings)
       await updateProject(project.id, {
@@ -432,6 +475,8 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
     } catch (error) {
       console.error("Failed to save project:", error);
       toast.error("Failed to save project");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -463,6 +508,17 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
     }
   };
 
+  // Handle export cancellation
+  const handleExportCancel = () => {
+    if (exportAbortControllerRef.current) {
+      exportAbortControllerRef.current.abort();
+      setExportStatus(null);
+      setExportError("");
+      setIsExporting(false);
+      toast.info("Export cancelled");
+    }
+  };
+
   return (
     <div className="h-screen bg-background text-foreground flex flex-col overflow-hidden">
       {/* Top Toolbar */}
@@ -476,6 +532,7 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
         projectTitle={project?.title || "Untitled Video"}
         onTitleUpdate={handleTitleUpdate}
         onSave={handleManualSave}
+        isSaving={isSaving}
         onPreview={() => setShowVideoPreview(true)}
         onExport={() => setRightPanel("videoSettings")}
         onBeautify={() => setShowBeautifyModal(true)}
@@ -553,13 +610,7 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
               currentLayout={activeScene.layout}
               currentContent={activeScene.layoutContent}
               onLayoutSelect={handleLayoutChange}
-              onContentChange={(content) => {
-                setScenes((prev) =>
-                  prev.map((s) =>
-                    s.id === activeSceneId ? { ...s, layoutContent: content } : s
-                  )
-                );
-              }}
+              onContentChange={handleLayoutContentChange}
               onClose={() => setRightPanel(null)}
             />
           )}
@@ -679,6 +730,10 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
                   setExportStatus("bundling");
                   setExportError("");
 
+                  // Create new AbortController for this export
+                  const abortController = new AbortController();
+                  exportAbortControllerRef.current = abortController;
+
                   // Store settings in state
                   setVideoSettings(newVideoSettings);
                   setAudioSettings(newAudioSettings);
@@ -698,6 +753,11 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
                     console.error("Failed to prepare assets:", error);
                   }
 
+                  // Check if cancelled after asset preparation
+                  if (abortController.signal.aborted) {
+                    return;
+                  }
+
                   // Show rendering status
                   setExportStatus("rendering");
 
@@ -710,6 +770,7 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
                       videoSettings: newVideoSettings,
                       audioSettings: newAudioSettings,
                     }),
+                    signal: abortController.signal,
                   });
 
                   const data = await response.json();
@@ -723,11 +784,19 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
                     setExportError(data.error || "Failed to export video");
                   }
                 } catch (error) {
-                  console.error("Export error:", error);
-                  setExportStatus("error");
-                  setExportError(error instanceof Error ? error.message : "Failed to export video");
+                  // Check if error is due to abort
+                  if (error instanceof Error && error.name === "AbortError") {
+                    console.log("Export cancelled by user");
+                    setExportStatus(null);
+                    toast.info("Export cancelled");
+                  } else {
+                    console.error("Export error:", error);
+                    setExportStatus("error");
+                    setExportError(error instanceof Error ? error.message : "Failed to export video");
+                  }
                 } finally {
                   setIsExporting(false);
+                  exportAbortControllerRef.current = null;
                 }
               }}
               onPreview={(newVideoSettings, newAudioSettings) => {
@@ -793,6 +862,7 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
             document.body.removeChild(link);
             setExportStatus(null);
           } : undefined}
+          onCancel={(exportStatus === "bundling" || exportStatus === "rendering") ? handleExportCancel : undefined}
         />
       )}
 

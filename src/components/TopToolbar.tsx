@@ -24,7 +24,8 @@ import {
   Sparkles,
   Wand2,
   Zap,
-  Wand
+  Wand,
+  Loader2
 } from "lucide-react";
 import { RightPanelType } from "@/types";
 
@@ -38,6 +39,7 @@ interface TopToolbarProps {
   projectTitle: string;
   onTitleUpdate: (newTitle: string) => void;
   onSave: () => void;
+  isSaving?: boolean;
   onPreview: () => void;
   onExport: () => void;
   onBeautify: () => void;
@@ -65,6 +67,7 @@ export function TopToolbar({
   projectTitle,
   onTitleUpdate,
   onSave,
+  isSaving = false,
   onPreview,
   onExport,
   onBeautify,
@@ -211,9 +214,13 @@ export function TopToolbar({
       {/* Right Section */}
       <div className="flex items-center gap-3">
         <Separator orientation="vertical" className="h-6" />
-        <Button variant="outline" size="sm" className="gap-2" onClick={onSave}>
-          <Save className="h-4 w-4" />
-          Save
+        <Button variant="outline" size="sm" className="gap-2" onClick={onSave} disabled={isSaving}>
+          {isSaving ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Save className="h-4 w-4" />
+          )}
+          {isSaving ? "Saving..." : "Save"}
         </Button>
         <Button variant="outline" size="sm" className="gap-2" onClick={onPreview}>
           <Eye className="h-4 w-4" />

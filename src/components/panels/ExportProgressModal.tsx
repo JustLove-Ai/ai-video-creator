@@ -9,6 +9,7 @@ interface ExportProgressModalProps {
   error?: string;
   onClose: () => void;
   onDownload?: () => void;
+  onCancel?: () => void;
 }
 
 export function ExportProgressModal({
@@ -17,6 +18,7 @@ export function ExportProgressModal({
   error,
   onClose,
   onDownload,
+  onCancel,
 }: ExportProgressModalProps) {
   return (
     <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-8">
@@ -109,11 +111,20 @@ export function ExportProgressModal({
           )}
         </div>
 
-        {/* Info */}
-        {(status === "bundling" || status === "rendering") && (
-          <p className="text-xs text-muted-foreground mt-4 text-center">
-            Please don't close this window
-          </p>
+        {/* Cancel Button */}
+        {(status === "bundling" || status === "rendering") && onCancel && (
+          <div className="mt-4 space-y-2">
+            <Button
+              variant="outline"
+              className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
+              onClick={onCancel}
+            >
+              Cancel Export
+            </Button>
+            <p className="text-xs text-muted-foreground text-center">
+              Canceling will stop the export process
+            </p>
+          </div>
         )}
       </div>
     </div>

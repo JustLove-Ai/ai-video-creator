@@ -120,3 +120,10 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Rich Text Editor Placeholder */
+[contenteditable][data-placeholder]:empty:before {
+  content: attr(data-placeholder);
+  opacity: 0.4;
+  pointer-events: none;
+}

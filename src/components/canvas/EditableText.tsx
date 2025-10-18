@@ -3,8 +3,9 @@
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Textarea } from "@/components/ui/textarea";
-import { ElementAnimation } from "@/types";
+import { ElementAnimation, TextFormatting } from "@/types";
 import { getAnimationProps } from "@/lib/animations";
+import { TextFormattingToolbar } from "./TextFormattingToolbar";
 
 interface EditableTextProps {
   value: string;
@@ -16,6 +17,8 @@ interface EditableTextProps {
   align?: "left" | "center" | "right";
   animation?: ElementAnimation;
   onElementClick?: () => void;
+  formatting?: TextFormatting;
+  onFormattingChange?: (formatting: TextFormatting) => void;
 }
 
 export function EditableText({
@@ -28,10 +31,13 @@ export function EditableText({
   align = "left",
   animation,
   onElementClick,
+  formatting = {},
+  onFormattingChange,
 }: EditableTextProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const toolbarRef = useRef<HTMLDivElement>(null);
   const animationProps = getAnimationProps(animation);
 
   useEffect(() => {
@@ -45,7 +51,11 @@ export function EditableText({
     setIsEditing(true);
   };
 
-  const handleBlur = () => {
+  const handleBlur = (e: React.FocusEvent) => {
+    // Don't close if clicking on the toolbar
+    if (toolbarRef.current && toolbarRef.current.contains(e.relatedTarget as Node)) {
+      return;
+    }
     setIsEditing(false);
   };
 
@@ -59,23 +69,50 @@ export function EditableText({
     }
   };
 
+  // Merge formatting styles with base styles
+  const mergedStyle: React.CSSProperties = {
+    ...style,
+    fontWeight: formatting.bold ? "bold" : style.fontWeight,
+    fontStyle: formatting.italic ? "italic" : style.fontStyle,
+    textDecoration: formatting.underline ? "underline" : style.textDecoration,
+    color: formatting.color || style.color,
+    fontFamily: formatting.fontFamily || style.fontFamily,
+  };
+
   if (isEditing) {
     return (
-      <Textarea
-        ref={textareaRef}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onBlur={handleBlur}
-        onKeyDown={handleKeyDown}
-        placeholder={placeholder}
-        className={`resize-none bg-transparent border-2 border-dashed border-blue-500 focus:ring-2 focus:ring-blue-500 ${className}`}
-        style={{
-          ...style,
-          textAlign: align,
-          minHeight: multiline ? "100px" : "auto",
-        }}
-        rows={multiline ? 4 : 1}
-      />
+      <div className="relative">
+        {/* Formatting Toolbar */}
+        {onFormattingChange && (
+          <div
+            ref={toolbarRef}
+            className="absolute -top-12 left-0 z-50 mb-2"
+            onMouseDown={(e) => e.preventDefault()} // Prevent blur on toolbar click
+          >
+            <TextFormattingToolbar
+              formatting={formatting}
+              onChange={onFormattingChange}
+            />
+          </div>
+        )}
+
+        {/* Text Input */}
+        <Textarea
+          ref={textareaRef}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onBlur={handleBlur}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder}
+          className={`resize-none bg-transparent border-2 border-dashed border-blue-500 focus:ring-2 focus:ring-blue-500 ${className}`}
+          style={{
+            ...mergedStyle,
+            textAlign: align,
+            minHeight: multiline ? "100px" : "auto",
+          }}
+          rows={multiline ? 4 : 1}
+        />
+      </div>
     );
   }
 
@@ -96,7 +133,7 @@ export function EditableText({
         }}
         className={`cursor-text hover:outline hover:outline-2 hover:outline-dashed hover:outline-blue-400 transition-all rounded px-2 py-1 ${className}`}
         style={{
-          ...style,
+          ...mergedStyle,
           textAlign: align,
           minHeight: "1.5em",
         }}

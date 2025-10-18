@@ -1,7 +1,7 @@
 "use client";
 
 import { Theme, LayoutContent, AnimationConfig } from "@/types";
-import { EditableText } from "@/components/canvas/EditableText";
+import { RichTextEditor } from "@/components/canvas/RichTextEditor";
 import { getBackgroundStyle } from "@/lib/themes";
 import { getElementAnimation } from "@/lib/animationHelpers";
 
@@ -26,7 +26,7 @@ export function CoverLayout({ content, theme, onContentChange, animationConfig, 
       }}
     >
       {content.showTitle !== false && (
-        <EditableText
+        <RichTextEditor
           value={content.title || ""}
           onChange={(title) => onContentChange({ ...content, title })}
           placeholder="Enter title"
@@ -47,7 +47,7 @@ export function CoverLayout({ content, theme, onContentChange, animationConfig, 
         <div style={{ height: `${theme.spacing.gap}px` }} />
       )}
       {content.showSubtitle !== false && (
-        <EditableText
+        <RichTextEditor
           value={content.subtitle || ""}
           onChange={(subtitle) => onContentChange({ ...content, subtitle })}
           placeholder="Enter subtitle"

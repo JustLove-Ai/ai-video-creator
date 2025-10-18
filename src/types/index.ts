@@ -40,6 +40,15 @@ export interface ChartData {
   legendPosition?: "top" | "bottom" | "left" | "right";
 }
 
+// Text Formatting
+export interface TextFormatting {
+  bold?: boolean;
+  italic?: boolean;
+  underline?: boolean;
+  color?: string;
+  fontFamily?: string;
+}
+
 // Layout Content - different layouts use different fields
 export interface LayoutContent {
   title?: string;
@@ -64,6 +73,14 @@ export interface LayoutContent {
   quoteAuthor?: string;
   // Step-by-step layouts
   steps?: Array<{ title: string; description: string }>;
+  // Text formatting
+  titleFormatting?: TextFormatting;
+  subtitleFormatting?: TextFormatting;
+  bodyFormatting?: TextFormatting;
+  quoteFormatting?: TextFormatting;
+  quoteAuthorFormatting?: TextFormatting;
+  leftColumnFormatting?: TextFormatting;
+  rightColumnFormatting?: TextFormatting;
   // Visibility toggles
   showTitle?: boolean; // Default true
   showSubtitle?: boolean; // Default true
