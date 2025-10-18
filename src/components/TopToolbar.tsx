@@ -25,7 +25,8 @@ import {
   Wand2,
   Zap,
   Wand,
-  Loader2
+  Loader2,
+  Mic
 } from "lucide-react";
 import { RightPanelType } from "@/types";
 
@@ -43,6 +44,8 @@ interface TopToolbarProps {
   onPreview: () => void;
   onExport: () => void;
   onBeautify: () => void;
+  onRecordVoiceOver: () => void;
+  hasScenes: boolean;
 }
 
 const tools = [
@@ -71,6 +74,8 @@ export function TopToolbar({
   onPreview,
   onExport,
   onBeautify,
+  onRecordVoiceOver,
+  hasScenes,
 }: TopToolbarProps) {
   const [videoTitle, setVideoTitle] = useState(projectTitle);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -214,6 +219,27 @@ export function TopToolbar({
       {/* Right Section */}
       <div className="flex items-center gap-3">
         <Separator orientation="vertical" className="h-6" />
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={onRecordVoiceOver}
+                disabled={!hasScenes}
+              >
+                <Mic className="h-4 w-4" />
+                Record Voice-Over
+              </Button>
+            </TooltipTrigger>
+            {!hasScenes && (
+              <TooltipContent>
+                <p>Add scenes first to record voice-over</p>
+              </TooltipContent>
+            )}
+          </Tooltip>
+        </TooltipProvider>
         <Button variant="outline" size="sm" className="gap-2" onClick={onSave} disabled={isSaving}>
           {isSaving ? (
             <Loader2 className="h-4 w-4 animate-spin" />

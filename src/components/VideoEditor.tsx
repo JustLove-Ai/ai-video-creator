@@ -16,6 +16,7 @@ import { VideoPreviewPanel } from "./panels/VideoPreviewPanel";
 import { VideoSettingsPanel } from "./panels/VideoSettingsPanel";
 import { ExportProgressModal } from "./panels/ExportProgressModal";
 import { BeautifySlidesModal } from "./modals/BeautifySlidesModal";
+import { SceneBySceneRecorderModal } from "./modals/SceneBySceneRecorderModal";
 import { Scene, RightPanelType, Theme, LayoutType, ChartData, AnimationConfig } from "@/types";
 import { themePresets, mergeTheme } from "@/lib/themes";
 import { parseScriptToLayout, preserveContentOnLayoutChange } from "@/lib/layouts";
@@ -60,6 +61,7 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
   const [exportError, setExportError] = useState<string>("");
   const [exportVideoUrl, setExportVideoUrl] = useState<string>("");
   const [showBeautifyModal, setShowBeautifyModal] = useState(false);
+  const [showSceneRecorderModal, setShowSceneRecorderModal] = useState(false);
   const [animationKey, setAnimationKey] = useState(0); // Force animation replay
   const [isSaving, setIsSaving] = useState(false);
 
@@ -519,6 +521,40 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
     }
   };
 
+  // Handle scene-by-scene recording completion
+  const handleSceneRecordingComplete = (audioData: Map<string, { audioUrl: string; duration: number }>) => {
+    // Update scenes with recorded audio
+    setScenes((prev) =>
+      prev.map((scene) => {
+        const recording = audioData.get(scene.id);
+        if (recording) {
+          return {
+            ...scene,
+            recordedAudioUrl: recording.audioUrl,
+            duration: recording.duration,
+          };
+        }
+        return scene;
+      })
+    );
+
+    // Save to database
+    startTransition(async () => {
+      try {
+        const updatePromises = Array.from(audioData.entries()).map(([sceneId, { audioUrl, duration }]) =>
+          updateScene(sceneId, {
+            recordedAudioUrl: audioUrl,
+            duration,
+          })
+        );
+        await Promise.all(updatePromises);
+      } catch (error) {
+        console.error("Failed to save recordings:", error);
+        toast.error("Failed to save some recordings");
+      }
+    });
+  };
+
   return (
     <div className="h-screen bg-background text-foreground flex flex-col overflow-hidden">
       {/* Top Toolbar */}
@@ -536,6 +572,8 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
         onPreview={() => setShowVideoPreview(true)}
         onExport={() => setRightPanel("videoSettings")}
         onBeautify={() => setShowBeautifyModal(true)}
+        onRecordVoiceOver={() => setShowSceneRecorderModal(true)}
+        hasScenes={scenes.length > 0}
       />
 
       {/* Main Content Area */}
@@ -872,6 +910,15 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
         onClose={() => setShowBeautifyModal(false)}
         projectId={projectId}
         onComplete={handleBeautifyComplete}
+      />
+
+      {/* Scene-by-Scene Recorder Modal */}
+      <SceneBySceneRecorderModal
+        isOpen={showSceneRecorderModal}
+        onClose={() => setShowSceneRecorderModal(false)}
+        scenes={scenes}
+        currentTheme={activeTheme}
+        onComplete={handleSceneRecordingComplete}
       />
     </div>
   );
