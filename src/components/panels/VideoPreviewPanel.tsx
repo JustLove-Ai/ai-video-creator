@@ -47,7 +47,25 @@ export function VideoPreviewPanel({ scenes, theme, voice, videoSettings, onClose
 
     async function prepare() {
       try {
+        // Debug: Log scenes before preparation
+        console.log('VideoPreviewPanel - Scenes before preparation:', scenes.map(s => ({
+          id: s.id,
+          hasRecordedAudio: !!s.recordedAudioUrl,
+          hasAIAudio: !!s.audioUrl,
+          recordedAudioUrl: s.recordedAudioUrl,
+          audioUrl: s.audioUrl,
+        })));
+
         const prepared = await prepareVideoAssets(scenes, setProgress, voice);
+
+        // Debug: Log scenes after preparation
+        console.log('VideoPreviewPanel - Scenes after preparation:', prepared.map(s => ({
+          id: s.id,
+          hasRecordedAudio: !!s.recordedAudioUrl,
+          hasAIAudio: !!s.audioUrl,
+          recordedAudioUrl: s.recordedAudioUrl,
+          audioUrl: s.audioUrl,
+        })));
 
         // Check if cancelled during preparation
         if (cancelled || isCancelled) {

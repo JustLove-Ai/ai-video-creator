@@ -87,8 +87,8 @@ export async function prepareVideoAssets(
   let totalAssets = 0;
 
   scenes.forEach(scene => {
-    // Need to generate audio if missing
-    if (scene.content && !scene.audioUrl) totalAssets++;
+    // Need to generate audio if missing (but skip if user has recorded audio)
+    if (scene.content && !scene.audioUrl && !scene.recordedAudioUrl) totalAssets++;
     // Need to save audio if it's a data URL
     if (scene.audioUrl && scene.audioUrl.startsWith('data:')) totalAssets++;
     // Need to save images if they're data URLs
@@ -120,8 +120,16 @@ export async function prepareVideoAssets(
     const scene = scenes[i];
     let updatedScene = { ...scene };
 
-    // Generate audio if missing
-    if (scene.content && !scene.audioUrl) {
+    // Debug: Log audio URLs
+    console.log(`Scene ${i + 1}:`, {
+      hasRecordedAudio: !!scene.recordedAudioUrl,
+      hasAIAudio: !!scene.audioUrl,
+      recordedAudioUrl: scene.recordedAudioUrl,
+      audioUrl: scene.audioUrl,
+    });
+
+    // Generate audio if missing (skip if user has recorded audio)
+    if (scene.content && !scene.audioUrl && !scene.recordedAudioUrl) {
       onProgress({
         total: totalAssets,
         completed,

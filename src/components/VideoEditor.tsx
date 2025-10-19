@@ -68,10 +68,10 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
   // Video and Audio Settings
   const [videoSettings, setVideoSettings] = useState<VideoSettings>({
     captions: {
-      enabled: true,
+      enabled: false,
       style: "word-by-word",
       position: "bottom",
-      maxLines: 2,
+      maxLines: 1,
       highlightColor: "#ff7900",
     },
     transitionType: "fade",
@@ -113,6 +113,8 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
           annotations: (s.annotations as unknown as Scene["annotations"]) || [],
           themeOverride: s.themeOverride as unknown as Partial<Theme> | undefined,
           animationConfig: s.animationConfig as unknown as AnimationConfig | undefined,
+          audioUrl: s.audioUrl || undefined,
+          recordedAudioUrl: s.recordedAudioUrl || undefined,
         }));
 
         setProject(loadedProject);
@@ -498,6 +500,8 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
         annotations: (s.annotations as unknown as Scene["annotations"]) || [],
         themeOverride: s.themeOverride as unknown as Partial<Theme> | undefined,
         animationConfig: s.animationConfig as unknown as AnimationConfig | undefined,
+        audioUrl: s.audioUrl || undefined,
+        recordedAudioUrl: s.recordedAudioUrl || undefined,
       }));
 
       setScenes(convertedScenes);
@@ -918,7 +922,10 @@ export function VideoEditor({ projectId }: VideoEditorProps) {
         onClose={() => setShowSceneRecorderModal(false)}
         scenes={scenes}
         currentTheme={activeTheme}
+        projectId={projectId}
         onComplete={handleSceneRecordingComplete}
+        onPreview={() => setShowVideoPreview(true)}
+        onExport={() => setRightPanel("videoSettings")}
       />
     </div>
   );

@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Mic, Square, ChevronLeft, ChevronRight, SkipForward, Check, Trash2, Play } from "lucide-react";
+import { X, Mic, Pause, ChevronLeft, ChevronRight, SkipForward, Check, Trash2, Play, Loader2, Eye, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Scene, Theme } from "@/types";
@@ -14,28 +14,37 @@ interface SceneBySceneRecorderModalProps {
   onClose: () => void;
   scenes: Scene[];
   currentTheme: Theme;
+  projectId: string;
   onComplete: (scenesWithAudio: Map<string, { audioUrl: string; duration: number }>) => void;
+  onPreview?: () => void;
+  onExport?: () => void;
 }
 
-type RecordingState = "idle" | "recording" | "hasRecording";
+type RecordingState = "idle" | "recording" | "paused" | "hasRecording";
 
 export function SceneBySceneRecorderModal({
   isOpen,
   onClose,
   scenes,
   currentTheme,
+  projectId,
   onComplete,
+  onPreview,
+  onExport,
 }: SceneBySceneRecorderModalProps) {
   const [currentSceneIndex, setCurrentSceneIndex] = useState(0);
   const [recordingState, setRecordingState] = useState<RecordingState>("idle");
   const [recordingTime, setRecordingTime] = useState(0);
   const [audioData, setAudioData] = useState<Map<string, { audioUrl: string; duration: number }>>(new Map());
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const audioElementRef = useRef<HTMLAudioElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const recordingSceneIdRef = useRef<string | null>(null); // Track which scene is being recorded
 
   const currentScene = scenes[currentSceneIndex];
   const totalScenes = scenes.length;
@@ -50,42 +59,55 @@ export function SceneBySceneRecorderModal({
         audioElementRef.current.pause();
         audioElementRef.current = null;
       }
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+      }
     };
   }, []);
 
-  // Reset recording state when scene changes
+  // Auto-save and navigate when scene changes
   useEffect(() => {
-    setRecordingState("idle");
-    setRecordingTime(0);
-    setIsPlaying(false);
+    const handleSceneChange = async () => {
+      // If we were recording or paused, finalize the recording
+      if ((recordingState === "recording" || recordingState === "paused") && mediaRecorderRef.current) {
+        await finalizeRecording();
+      }
 
-    // Check if current scene already has a recording
-    if (currentScene && audioData.has(currentScene.id)) {
-      setRecordingState("hasRecording");
-    }
-  }, [currentSceneIndex, currentScene, audioData]);
+      setRecordingTime(0);
+      setIsPlaying(false);
+
+      // Check if new scene already has a recording
+      if (currentScene && audioData.has(currentScene.id)) {
+        setRecordingState("hasRecording");
+      } else {
+        setRecordingState("idle");
+      }
+    };
+
+    handleSceneChange();
+  }, [currentSceneIndex]);
 
   const startRecording = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // Reuse existing stream if available, or create new one
+      let stream = streamRef.current;
+      if (!stream || !stream.active) {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        streamRef.current = stream;
+      }
+
       const mediaRecorder = new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
+
+      // Store the current scene ID at the time recording starts
+      recordingSceneIdRef.current = currentScene.id;
+      console.log('🎤 Started recording for scene:', currentScene.id);
 
       mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
           audioChunksRef.current.push(event.data);
         }
-      };
-
-      mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
-
-        // Save recording to server
-        await saveRecording(audioBlob);
-
-        // Stop all tracks
-        stream.getTracks().forEach((track) => track.stop());
       };
 
       mediaRecorder.start();
@@ -104,10 +126,10 @@ export function SceneBySceneRecorderModal({
     }
   };
 
-  const stopRecording = () => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
-      mediaRecorderRef.current.stop();
-      setRecordingState("hasRecording");
+  const pauseRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+      mediaRecorderRef.current.pause();
+      setRecordingState("paused");
       if (timerRef.current) {
         clearInterval(timerRef.current);
         timerRef.current = null;
@@ -115,10 +137,61 @@ export function SceneBySceneRecorderModal({
     }
   };
 
+  const resumeRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "paused") {
+      mediaRecorderRef.current.resume();
+      setRecordingState("recording");
+      // Resume timer
+      timerRef.current = setInterval(() => {
+        setRecordingTime((prev) => prev + 1);
+      }, 1000);
+    }
+  };
+
+  const finalizeRecording = async () => {
+    return new Promise<void>((resolve) => {
+      if (!mediaRecorderRef.current || mediaRecorderRef.current.state === "inactive") {
+        resolve();
+        return;
+      }
+
+      const recorder = mediaRecorderRef.current;
+
+      recorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+
+        // Save recording in background (non-blocking)
+        setIsSaving(true);
+        saveRecording(audioBlob).finally(() => {
+          setIsSaving(false);
+        });
+
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+          timerRef.current = null;
+        }
+
+        resolve();
+      };
+
+      recorder.stop();
+    });
+  };
+
   const saveRecording = async (audioBlob: Blob) => {
+    // Use the scene ID that was stored when recording started
+    const sceneId = recordingSceneIdRef.current;
+    if (!sceneId) {
+      console.error('No scene ID found for recording');
+      return;
+    }
+
+    console.log('💾 Saving recording for scene:', sceneId);
+
     const formData = new FormData();
     formData.append("audio", audioBlob);
-    formData.append("sceneId", currentScene.id);
+    formData.append("sceneId", sceneId);
+    formData.append("projectId", projectId);
 
     try {
       const response = await fetch("/api/save-recording", {
@@ -135,10 +208,12 @@ export function SceneBySceneRecorderModal({
         audio.onloadedmetadata = () => {
           const duration = Math.ceil(audio.duration);
 
-          // Update audio data map
+          console.log('✅ Recording saved for scene:', sceneId, 'URL:', audioUrl);
+
+          // Update audio data map with the correct scene ID
           setAudioData((prev) => {
             const newMap = new Map(prev);
-            newMap.set(currentScene.id, { audioUrl, duration });
+            newMap.set(sceneId, { audioUrl, duration });
             return newMap;
           });
 
@@ -186,19 +261,19 @@ export function SceneBySceneRecorderModal({
     }
   };
 
-  const goToPrevious = () => {
+  const goToPrevious = async () => {
     if (currentSceneIndex > 0) {
       setCurrentSceneIndex(currentSceneIndex - 1);
     }
   };
 
-  const goToNext = () => {
+  const goToNext = async () => {
     if (currentSceneIndex < totalScenes - 1) {
       setCurrentSceneIndex(currentSceneIndex + 1);
     }
   };
 
-  const skipScene = () => {
+  const skipScene = async () => {
     if (currentSceneIndex < totalScenes - 1) {
       setCurrentSceneIndex(currentSceneIndex + 1);
     }
@@ -214,13 +289,30 @@ export function SceneBySceneRecorderModal({
 
     onComplete(audioData);
     toast.success(`${audioData.size} scene(s) recorded successfully!`);
-    handleClose();
   };
 
-  const handleClose = () => {
-    if (recordingState === "recording") {
-      toast.warning("Please stop recording first");
-      return;
+  const handlePreview = () => {
+    handleComplete();
+    handleClose();
+    onPreview?.();
+  };
+
+  const handleExport = () => {
+    handleComplete();
+    handleClose();
+    onExport?.();
+  };
+
+  const handleClose = async () => {
+    // Auto-save any active recording before closing
+    if (recordingState === "recording" || recordingState === "paused") {
+      await finalizeRecording();
+    }
+
+    // Stop microphone stream
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
     }
 
     setCurrentSceneIndex(0);
@@ -271,7 +363,6 @@ export function SceneBySceneRecorderModal({
                 variant="ghost"
                 size="icon"
                 onClick={handleClose}
-                disabled={recordingState === "recording"}
               >
                 <X className="h-5 w-5" />
               </Button>
@@ -287,13 +378,17 @@ export function SceneBySceneRecorderModal({
               <div className="h-full flex flex-col gap-4">
                 {/* Video Canvas Preview */}
                 <div className="flex-1 bg-background rounded-lg border border-border overflow-hidden flex items-center justify-center">
-                  <div className="w-full h-full max-w-5xl max-h-[600px] mx-auto">
+                  <div className="w-full h-full max-w-5xl max-h-[600px] mx-auto flex items-center justify-center">
                     <VideoCanvas
-                      scene={currentScene}
-                      theme={currentTheme}
-                      onContentChange={() => {}}
-                      onAnnotationChange={() => {}}
-                      isReadOnly={true}
+                      activeScene={currentScene}
+                      activeTheme={currentTheme}
+                      selectedTool={null}
+                      annotationMode={false}
+                      onSceneUpdate={() => {}}
+                      onImageReplace={() => {}}
+                      onImageRemove={() => {}}
+                      onChartAdd={() => {}}
+                      isTimelineExpanded={true}
                     />
                   </div>
                 </div>
@@ -314,7 +409,7 @@ export function SceneBySceneRecorderModal({
                   <Button
                     variant="outline"
                     onClick={goToPrevious}
-                    disabled={currentSceneIndex === 0 || recordingState === "recording"}
+                    disabled={currentSceneIndex === 0}
                   >
                     <ChevronLeft className="h-4 w-4 mr-1" />
                     Previous
@@ -340,14 +435,42 @@ export function SceneBySceneRecorderModal({
                         {formatTime(recordingTime)}
                       </div>
                       <Button
-                        onClick={stopRecording}
+                        onClick={pauseRecording}
                         size="lg"
-                        variant="destructive"
+                        variant="outline"
                         className="gap-2 h-12"
                       >
-                        <Square className="h-5 w-5 fill-current" />
-                        Stop
+                        <Pause className="h-5 w-5" />
+                        Pause
                       </Button>
+                      {isSaving && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Saving...
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {recordingState === "paused" && (
+                    <div className="flex items-center gap-3">
+                      <div className="text-2xl font-bold text-orange-500 min-w-[80px] text-center">
+                        {formatTime(recordingTime)}
+                      </div>
+                      <Button
+                        onClick={resumeRecording}
+                        size="lg"
+                        className="gap-2 h-12"
+                      >
+                        <Mic className="h-5 w-5" />
+                        Resume
+                      </Button>
+                      {isSaving && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Saving...
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -363,8 +486,17 @@ export function SceneBySceneRecorderModal({
                         {isPlaying ? "Playing..." : "Play"}
                       </Button>
                       <Button
-                        onClick={startRecording}
-                        variant="outline"
+                        onClick={() => {
+                          // Delete existing recording and start fresh
+                          setAudioData((prev) => {
+                            const newMap = new Map(prev);
+                            newMap.delete(currentScene.id);
+                            return newMap;
+                          });
+                          setRecordingState("idle");
+                          // Auto-start recording
+                          setTimeout(() => startRecording(), 100);
+                        }}
                         size="lg"
                         className="gap-2"
                       >
@@ -391,28 +523,55 @@ export function SceneBySceneRecorderModal({
                       <Button
                         variant="ghost"
                         onClick={skipScene}
-                        disabled={recordingState === "recording"}
                       >
                         <SkipForward className="h-4 w-4 mr-1" />
                         Skip
                       </Button>
                       <Button
                         onClick={goToNext}
-                        disabled={recordingState === "recording"}
                       >
                         Next
                         <ChevronRight className="h-4 w-4 ml-1" />
                       </Button>
                     </>
                   ) : (
-                    <Button
-                      onClick={handleComplete}
-                      disabled={recordingState === "recording"}
-                      className="gap-2"
-                    >
-                      <Check className="h-4 w-4" />
-                      Done
-                    </Button>
+                    <>
+                      {audioData.size > 0 && (
+                        <>
+                          <Button
+                            variant="outline"
+                            onClick={handlePreview}
+                            className="gap-2"
+                          >
+                            <Eye className="h-4 w-4" />
+                            Preview
+                          </Button>
+                          <Button
+                            onClick={handleExport}
+                            className="gap-2"
+                            style={{ backgroundColor: '#ff7900' }}
+                          >
+                            <Download className="h-4 w-4" />
+                            Export
+                          </Button>
+                        </>
+                      )}
+                      <Button
+                        variant={audioData.size > 0 ? "ghost" : "default"}
+                        onClick={() => {
+                          if (audioData.size > 0) {
+                            handleComplete();
+                            handleClose();
+                          } else {
+                            handleClose();
+                          }
+                        }}
+                        className="gap-2"
+                      >
+                        <Check className="h-4 w-4" />
+                        {audioData.size > 0 ? "Save & Close" : "Close"}
+                      </Button>
+                    </>
                   )}
                 </div>
               </div>
